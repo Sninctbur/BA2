@@ -363,7 +363,6 @@ function BA2_GasmaskSound(p,sound)
     end
 end
 
-
 -- Hooks and timers
 hook.Add("PlayerSpawn","ba2_initSpeed",function(p)
     p.BA2Infection = 0

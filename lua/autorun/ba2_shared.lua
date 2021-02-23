@@ -17,7 +17,7 @@ function BA2_WriteToAltModels(list)
         file:Close()
     end
 end
-function BA2_GetAltModels(raw)
+function BA2_GetAltModels(raw,noPrint)
     local tbl = {}
 
     if !file.Exists("ba2_altmodels.txt","DATA") then
@@ -31,13 +31,13 @@ function BA2_GetAltModels(raw)
         local line = string.Trim(file:ReadLine(),"\n")
         if raw or util.IsValidRagdoll(line) then
             table.insert(tbl,line)
-        else
+        elseif !noPrint then
             print("BA2: Invalid custom model detected: "..line)
         end
     end
 
     if #tbl == 0 and !raw then
-        if SERVER then
+        if SERVER and !noPrint then
             print("BA2: No valid custom models found! Using default...")
         end
         tbl = {
@@ -56,6 +56,11 @@ function BA2_ReloadCustoms()
     BA2_CustomInfs = BA2_GetAltModels()
     
     print("BA2: Custom Infected models loaded!") 
+    return BA2_CustomInfs
+end
+
+function BA2_GetCustomInfs()
+    return BA2_CustomInfs
 end
 
 -- Tables

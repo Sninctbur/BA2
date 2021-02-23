@@ -135,9 +135,10 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         -- mixer:SetColor(Color(133,165,180)) 	-- Set the default color
 
         panel:Help("Custom Models:")
+        panel:ControlHelp("Press Help key (F1) to keep the spawnmenu open")
         local tBox = vgui.Create("DTextEntry",panel)
         tBox:SetMultiline(true)
-        tBox:SetPos(25,125)
+        tBox:SetPos(25,135)
         tBox:SetSize(400,300)
         tBox:SetVerticalScrollbarEnabled(true)
 
@@ -152,7 +153,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         local rButton = vgui.Create("DButton",panel)
         rButton:SetText("Reload Custom Models")
-        rButton:SetPos(25,450)
+        rButton:SetPos(25,460)
         rButton:SetSize(200,50)
         rButton.DoClick = function()
             BA2_WriteToAltModels(string.Split(tBox:GetValue(),"\n"))

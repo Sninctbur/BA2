@@ -61,7 +61,11 @@ function ENT:Initialize()
 			end
 
 			if self.InfBody == "CUSTOM" then
-				local tbl = BA2_GetAltModels()
+				local tbl = BA2_GetCustomInfs()
+				if #tbl == 0 then
+					tbl = BA2_ReloadCustoms()
+				end
+
 				self.InfBody = tbl[math.random(#tbl)]
 			end
 
@@ -633,7 +637,7 @@ function ENT:BreakLArm(dmginfo)
 		"ValveBiped.Bip01_L_Finger4",
 	})
 	self:CreateGib(self.InfBody:GetBonePosition(self.InfBody:LookupBone("ValveBiped.Bip01_L_Forearm")),"models/ba2/gibs/armlowerl.mdl",dmginfo:GetDamageForce():GetNormalized() * 100)
-	self:CreateGib(self.InfBody:GetBonePosition(self.InfBody:LookupBone("ValveBiped.Bip01_L_Hand")),"models/ba2/gibs/handl.mdl",dmginfo:GetDamageForce():GetNormalized() * 100)
+	self:CreateGib(self.InfBody:GetBonePosition(self.InfBody:LookupBone("ValveBiped.Bip01_L_Hand") or self.InfBody:LookupBone("ValveBiped.Bip01_L_Forearm")),"models/ba2/gibs/handl.mdl",dmginfo:GetDamageForce():GetNormalized() * 100)
 
 	local eff = EffectData()
 	eff:SetFlags(6)
@@ -666,7 +670,7 @@ function ENT:BreakRArm(dmginfo)
 		"ValveBiped.Bip01_R_Finger4",
 	})
 	self:CreateGib(self.InfBody:GetBonePosition(self.InfBody:LookupBone("ValveBiped.Bip01_R_Forearm")),"models/ba2/gibs/armlowerr2.mdl",dmginfo:GetDamageForce():GetNormalized() * 100)
-	self:CreateGib(self.InfBody:GetBonePosition(self.InfBody:LookupBone("ValveBiped.Bip01_R_Hand")),"models/ba2/gibs/handr.mdl",dmginfo:GetDamageForce():GetNormalized() * 100)
+	self:CreateGib(self.InfBody:GetBonePosition(self.InfBody:LookupBone("ValveBiped.Bip01_R_Hand") or self.InfBody:LookupBone("ValveBiped.Bip01_R_Forearm")),"models/ba2/gibs/handr.mdl",dmginfo:GetDamageForce():GetNormalized() * 100)
 
 	local eff = EffectData()
 	eff:SetFlags(6)
