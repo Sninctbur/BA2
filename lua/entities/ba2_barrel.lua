@@ -83,7 +83,10 @@ function ENT:BA2_BarrelExplode()
     dmg:SetAttacker(att)
     dmg:SetInflictor(BA2_InfectionManager())
 
-    util.BlastDamageInfo(dmg,self:GetPos(),400)
+    local blastPos = self:GetPos()
+    timer.Simple(.1,function()
+        util.BlastDamageInfo(dmg,blastPos,400)
+    end)
 
     exp:Fire("Explode")
 
@@ -110,7 +113,7 @@ function ENT:BA2_BarrelExplode()
         prop:Spawn()
         prop:Activate()
         prop:PhysWake()
-        prop:GetPhysicsObject():ApplyForceCenter(VectorRand() * 2500)
+        --prop:GetPhysicsObject():ApplyForceCenter(VectorRand() * 2500)
         prop:SetLocalAngularVelocity(AngleRand())
         SafeRemoveEntityDelayed(prop,6)
     end

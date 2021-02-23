@@ -112,6 +112,9 @@ function ENT:Think()
 
         if math.random(100) <= 6 then
             surface.PlaySound("ambient/wind/wind_snippet"..math.random(1,5)..".wav")
+            if GetConVar("ba2_misc_airwasteshake"):GetBool() and !trace.HitWorld then
+                util.ScreenShake(Vector(0,0,0),math.random(12),5,6,0)
+            end
         end
 
         self:SetNextClientThink(CurTime() + .5)

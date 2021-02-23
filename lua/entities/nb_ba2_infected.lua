@@ -859,8 +859,12 @@ function ENT:OnKilled(dmginfo)
 		local bone = body:GetPhysicsObjectNum(id - 1)
 		if IsValid(bone) then
 			local pos,angle = self:GetBonePosition(body:TranslatePhysBoneToBone(id - 1))
-			bone:SetPos(pos)
-			bone:SetAngles(angle)
+			if IsValid(pos) then
+				bone:SetPos(pos)
+			end
+			if IsValid(angle) then
+				bone:SetAngles(angle)
+			end
 			bone:AddVelocity(self:GetVelocity())
 
 			--body:ManipulateBoneScale(id - 1,self.InfBody:GetManipulateBoneScale(id - 1))

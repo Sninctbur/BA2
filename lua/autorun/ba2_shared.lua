@@ -1,5 +1,6 @@
 -- Shared convars
 CreateConVar("ba2_misc_maskfilters",1,FCVAR_ARCHIVE,"If enabled, gas mask filters will degrade over time and will need to be switched out occasionally.")
+CreateConVar("ba2_misc_airwasteshake",1,FCVAR_ARCHIVE,"If enabled, players outside in Air Waste will have their screen occasionally shake around in the wind.")
 
 -- Custom infected models
 BA2_CustomInfs = {}
@@ -18,8 +19,14 @@ function BA2_WriteToAltModels(list)
 end
 function BA2_GetAltModels(raw)
     local tbl = {}
-    local file = file.Open("ba2_altmodels.txt","r","DATA")
 
+    if !file.Exists("ba2_altmodels.txt","DATA") then
+        print("BA2: Creating ba2_altmodels.txt...")
+        file.Write("ba2_altmodels.txt","")
+    end
+
+    local file = file.Open("ba2_altmodels.txt","r","DATA")
+    
     while !file:EndOfFile() do
         local line = string.Trim(file:ReadLine(),"\n")
         if raw or util.IsValidRagdoll(line) then
@@ -29,7 +36,7 @@ function BA2_GetAltModels(raw)
         end
     end
 
-    if #tbl == 0 and raw then
+    if #tbl == 0 and !raw then
         if SERVER then
             print("BA2: No valid custom models found! Using default...")
         end
