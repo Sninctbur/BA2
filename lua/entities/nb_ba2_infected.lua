@@ -517,6 +517,9 @@ function ENT:ZombieSmash(ent)
 		if IsValid(self) and IsValid(ent) then
 			if ent:GetClass() ~= "prop_physics" or ent:GetPos():Distance(self:GetPos()) <= 60 then
 				local propDmg = math.random(10,20) * GetConVar("ba2_zom_dmgmult"):GetFloat()
+				if self.BA2_LArmDown or self.BA2_RArmDown then
+					propDmg = propDmg * 0.5
+				end
 
 				if ent:GetClass() == "prop_door_rotating" then
 					if ent.BA2_DoorHealth == nil then
@@ -567,6 +570,10 @@ function ENT:ZombieSmash(ent)
 					dmg:SetAttacker(self)
 					dmg:SetInflictor(self)
 					dmg:SetDamageType(DMG_SLASH)
+
+					if self.BA2_LArmDown or self.BA2_RArmDown then
+						dmg:SetDamage(dmg:GetDamage() * 0.5)
+					end
 		
 					ent:TakeDamageInfo(dmg)
 				end

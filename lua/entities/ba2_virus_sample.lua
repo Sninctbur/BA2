@@ -32,7 +32,7 @@ function ENT:VialBreak(ent)
 
     if IsValid(ent) then
         if (ent:IsPlayer() or ent:IsNPC()) then
-            BA2_AddInfection(ent,18000) -- Good luck surviving 5 hours of infection
+            BA2_AddInfection(ent,18000) -- Good luck surviving 6 1/4 hours of infection
         end
         
         --ent:TakeDamageInfo(self.dmg)
@@ -45,7 +45,7 @@ function ENT:VialBreak(ent)
     util.Effect("GlassImpact",eff)
     util.Effect("BloodImpact",eff)
 
-    for i,e in pairs(ents.FindInSphere(self:GetPos(),500)) do
+    for i,e in pairs(ents.FindInSphere(self:GetPos(),260)) do
         if BA2_GasmaskNpcs[e:GetClass()] or !BA2_GetActiveMask(e) then
             BA2_AddInfection(e,(65 - (self:GetPos():Distance(e:GetPos())) / 4))
         end
@@ -63,7 +63,7 @@ end
 
 function ENT:PhysicsCollide(data,col)
     local l = self:GetVelocity():Length()
-    if data.HitEntity:GetClass() ~= "func_breakable_surf" and l >= 150 then -- It's fun to throw it through windows
+    if data.HitEntity:GetClass() ~= "func_breakable_surf" and l >= 100 then -- It's fun to throw it through windows
         util.Decal("BA2_VirusBloodStain",data.HitPos - data.HitNormal,data.HitPos + data.HitNormal)
         self:VialBreak(data.HitEntity)
     elseif l >= 25 then

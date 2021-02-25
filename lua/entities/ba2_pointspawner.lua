@@ -20,8 +20,10 @@ function ENT:Initialize()
             self:Remove()
         end
 
-        timer.Simple(0,function()
-            self.zom = SpawnZom(self)
+        timer.Simple(0.1,function()
+            if IsValid(self) then
+                self.zom = SpawnZom(self)
+            end
         end)
     end
 end

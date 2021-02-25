@@ -71,7 +71,6 @@ CreateConVar("ba2_misc_startwithmask",0,FCVAR_ARCHIVE,[[If enabled, all players 
 CreateConVar("ba2_misc_deathdropmask",1,FCVAR_ARCHIVE,[[If enabled, players will drop their gas mask on death.]])
 CreateConVar("ba2_misc_deathdropfilter",1,FCVAR_ARCHIVE,[[If enabled, players will drop all of their gas mask filters on death.]])
 CreateConVar("ba2_misc_headshoteff",1,FCVAR_ARCHIVE,[[If enabled, zombies' heads have a chance to comically explode when they are killed by a headshot.]])
-CreateConVar("ba2_misc_airwastevisuals",1,FCVAR_ARCHIVE,[[If enabled, air waste will turn the map's fog green.]])
 
 concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
 
@@ -571,4 +570,12 @@ hook.Add("PlayerSpawn","BA2_PlayerSpawn",function(p)
     end
 end)
 
+hook.Add("PostGamemodeLoaded","BA2_NavmeshWarn",function()
+    timer.Simple(2,function()
+        if GetConVar("ba2_misc_navmeshwarn"):GetBool() and #navmesh.GetAllNavAreas() == 0 then
+            net.Start("BA2NoNavmeshWarn")
+            net.Send(Entity(1))
+        end
+    end) 
+end)
 -- Code by Sninctbur

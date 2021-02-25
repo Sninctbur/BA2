@@ -1,5 +1,6 @@
 -- Shared convars
 CreateConVar("ba2_misc_maskfilters",1,FCVAR_ARCHIVE,"If enabled, gas mask filters will degrade over time and will need to be switched out occasionally.")
+CreateConVar("ba2_misc_airwastevisuals",1,FCVAR_ARCHIVE,[[If enabled, air waste will turn the map's fog green.]])
 CreateConVar("ba2_misc_airwasteshake",1,FCVAR_ARCHIVE,"If enabled, players outside in Air Waste will have their screen occasionally shake around in the wind.")
 
 -- Custom infected models
@@ -11,7 +12,9 @@ function BA2_WriteToAltModels(list)
         local file = file.Open("ba2_altmodels.txt","w","DATA")
 
         for i,mdl in pairs(list) do
-            file:Write(string.Trim(mdl,"\n").."\n")
+            if line ~= "" then
+                file:Write(string.Trim(mdl,"\n").."\n")
+            end
         end
 
         file:Close()
@@ -29,10 +32,12 @@ function BA2_GetAltModels(raw,noPrint)
     
     while !file:EndOfFile() do
         local line = string.Trim(file:ReadLine(),"\n")
-        if raw or util.IsValidRagdoll(line) then
-            table.insert(tbl,line)
-        elseif !noPrint then
-            print("BA2: Invalid custom model detected: "..line)
+        if line ~= "" then
+            if raw or util.IsValidRagdoll(line) then
+                table.insert(tbl,line)
+            elseif !noPrint then
+                print("BA2: Invalid custom model detected: "..line)
+            end
         end
     end
 
@@ -359,20 +364,20 @@ sound.Add({
 -- Other
 game.AddDecal("BA2_VirusBloodStain","decals/bloodstain_002")
 
-if ArcMedShots then
-    ArcMedShots["ba2"] = {
-        QuickName = "Experimental Treatment",
-        PrintName = "Experimental Treatment",
-        Description = {"The closest thing to a cure...", "Reduces Bio-Virus infection by 50%", "Hurts you for 30 HP"},
-        DescriptionColors = {COLOR_NEUTRAL, COLOR_GOOD, COLOR_BAD},
-        OnInject = function(ply, infl)
-            if SERVER then
-                if ply.BAInfection ~= nil then
-                    ply.BAInfection = math.floor(ply.BAInfection / 2)
-                end
-                ply:TakeDamage(30)
-            end
-        end, -- shared
-        Skin = 0,
-    }
-end
+-- if ArcMedShots then
+--     ArcMedShots["ba2"] = {
+--         QuickName = "Experimental Treatment",
+--         PrintName = "Experimental Treatment",
+--         Description = {"The closest thing to a cure...", "Reduces Bio-Virus infection by 50%", "Hurts you for 30 HP"},
+--         DescriptionColors = {COLOR_NEUTRAL, COLOR_GOOD, COLOR_BAD},
+--         OnInject = function(ply, infl)
+--             if SERVER then
+--                 if ply.BAInfection ~= nil then
+--                     ply.BAInfection = math.floor(ply.BAInfection / 2)
+--                 end
+--                 ply:TakeDamage(30)
+--             end
+--         end, -- shared
+--         Skin = 0,
+--     }
+-- end

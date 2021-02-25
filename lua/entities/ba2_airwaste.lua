@@ -26,9 +26,9 @@ function ENT:AirwasteVisuals()
     self.FogEdit:SetSolid(SOLID_NONE)
 
     self.FogEdit:SetFogStart(0)
-    self.FogEdit:SetFogEnd(280)
-    self.FogEdit:SetFogColor(Vector(0,70/255,0))
-    self.FogEdit:SetDensity(.92)
+    self.FogEdit:SetFogEnd(2400)
+    self.FogEdit:SetFogColor(Vector(0,35/255,0))
+    self.FogEdit:SetDensity(.97)
 
     self.SkyEdit:SetTopColor(Vector(0,.02,0))
     self.SkyEdit:SetBottomColor(Vector(0,.05,0))
@@ -85,7 +85,7 @@ function ENT:Think()
 
                     local dmg = DamageInfo()
                     dmg:SetDamage(math.random(0,2))
-                    dmg:SetDamageType(DMG_DIRECT)
+                    dmg:SetDamageType(DMG_ACID)
                     dmg:SetAttacker(BA2_InfectionManager())
                     dmg:SetInflictor(BA2_InfectionManager())
                     
@@ -104,16 +104,16 @@ function ENT:Think()
             filter = LocalPlayer()
         })
 
-        if trace.HitWorld or trace.HitSky then
+        if trace.HitWorld and !trace.HitSky then
             self.AirWasteSound:ChangeVolume(.15,.25)
         elseif self.AirWasteSound:GetVolume() < 1 then
             self.AirWasteSound:ChangeVolume(1,.25)
         end
 
-        if math.random(100) <= 6 then
+        if math.random(100) <= 5 then
             surface.PlaySound("ambient/wind/wind_snippet"..math.random(1,5)..".wav")
             if GetConVar("ba2_misc_airwasteshake"):GetBool() and !trace.HitWorld then
-                util.ScreenShake(Vector(0,0,0),math.random(12),5,6,0)
+                util.ScreenShake(Vector(0,0,0),math.random(0,12),5,6,0)
             end
         end
 

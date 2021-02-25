@@ -1,29 +1,109 @@
--- Net messages
-net.Receive("BA2NoNavmeshWarn",function()
-    local DFrame = vgui.Create( "DFrame" ) 	-- The name of the panel we don't have to parent it.
-    DFrame:SetPos( 100, 100 )
-    DFrame:SetSize( 300, 200 )
+-- Derma elements
+function BA2_NoNavmeshWarn()
+    local DFrame = vgui.Create( "DFrame" )
+    DFrame:SetPos( ScrW() / 2 - 400, ScrH() / 2 - 275 )
+    DFrame:SetSize( 800, 550 )
     DFrame:SetTitle( "Navmesh Missing!" )
     DFrame:MakePopup()
 
-    local text1 = vgui.Create("DLabel",DFrame)
-    text1:SetPos(50,50)
-    if LocalPlayer():IsAdmin() then
-        text1:SetText(
-            [[Bio-Annihilation II's zombies require a Navmesh to be loaded on the map to function.
-            You can create one by running nav_generate in the developer console, or by pressing the button below.
-            Be warned that the process to generate a navmesh will SIGNIFICANTLY reduce FPS for a while, and then RESTART THE MAP when it's done.
-            Only start if nobody's actively playing and nobody will lose anything if the map restarts.
-            Generate the navmesh now?]]
-        )
-    else
-        text1:SetText(
-            [[Bio-Annihilation II's zombies require a Navmesh to be loaded on the map to function.
-            Ask the host or another server admin to consider generating one for this map.]]
-        )
-    end
-end)
+    local img = vgui.Create("DImage",DFrame)
+    img:SetSize(1000,600)
+    img:SetPos(50,-25)
+    img:SetImage("vgui/its_ya_boi_zambo")
 
+    local lbl = vgui.Create("DLabel",DFrame)
+    lbl:SetSize(800,100)
+    lbl:SetPos(225,10)
+    lbl:SetColor(Color(255,255,255))
+    lbl:SetFont("DermaLarge")
+    lbl:SetText("Hold on, friend!")
+
+    local lbl = vgui.Create("DLabel",DFrame)
+    lbl:SetSize(500,200)
+    lbl:SetPos(50,50)
+    lbl:SetColor(Color(255,255,255))
+    lbl:SetWrap(true)
+    lbl:SetText("Bio-Annihilation II’s zombies are Nextbots, and thus require a Navmesh to function. Unfortunately, the map you’ve just loaded doesn’t have a navmesh."
+        .."\nBut that’s no problem! I, Zambo the Help Zombie, am here to help you fix this."
+        .."\n\nTo add a navmesh to this map, you have two feasible options:"
+        .."\n• Some addons add a navmesh to specific maps. If you can find one for this map, install it and restart the server. It will work immediately!"
+        .."\n• You can also generate the navmesh yourself. This process is straightforward, but can take time. I’ll walk you through it in the steps below."
+        .."\n\n"
+    )
+
+    local lbl = vgui.Create("DLabel",DFrame)
+    lbl:SetSize(500,200)
+    lbl:SetPos(50,172)
+    lbl:SetColor(Color(255,255,255))
+    lbl:SetWrap(true)
+    lbl:SetText("To generate a navmesh:"
+        .."\n• Open the developer console and run the command “nav_generate.”"
+        .."\n       ◦ By default, you will need to enable access to the console manually. You can do that in Options -> Keyboard -> Advanced..."
+        .."\n• Wait for the generation process to finish. Be warned that this process will SIGNIFICANTLY REDUCE PERFORMANCE for a while, and then RESTART THE MAP when it’s done. Only do this when nobody is actively playing, and nobody would lose anything if the map restarts. Now would be a good time!"
+        .."\n\nIf you would like to save yourself a few clicks, I can run nav_generate for you. Would you like to do that now?"
+    )
+
+    local btn = vgui.Create("DButton",DFrame)
+    btn:SetSize(125,35)
+    btn:SetPos(125,370)
+    btn:SetText("Generate Navmesh")
+    btn.DoClick = function()
+        local ConfFrame = vgui.Create("DFrame")
+        ConfFrame:SetSize(300,150)
+        ConfFrame:SetPos( ScrW() / 2 - 150, ScrH() / 2 - 75 )
+        ConfFrame:SetTitle("Confirm")
+        ConfFrame:MakePopup()
+
+        local lbl = vgui.Create("DLabel",ConfFrame)
+        lbl:SetSize(300,100)
+        lbl:SetPos(15,10)
+        lbl:SetColor(Color(255,255,255))
+        lbl:SetText("Are you sure? This process WILL slow down your game!")
+
+        local btn = vgui.Create("DButton",ConfFrame)
+        btn:SetSize(115,35)
+        btn:SetPos(25,85)
+        btn:SetText("Yes")
+        btn.DoClick = function()
+            RunConsoleCommand("nav_generate")
+            DFrame:Remove()
+            ConfFrame:Remove()
+            DFrame:Remove()
+        end
+
+        local btn = vgui.Create("DButton",ConfFrame)
+        btn:SetSize(115,35)
+        btn:SetPos(160,85)
+        btn:SetText("No")
+        btn.DoClick = function()
+            ConfFrame:Remove()
+        end
+        --RunConsoleCommand("nav_generate")
+        --DFrame:Remove()
+    end
+
+    local btn = vgui.Create("DButton",DFrame)
+    btn:SetSize(125,35)
+    btn:SetPos(125,415)
+    btn:SetText("Close")
+    btn.DoClick = function()
+        DFrame:Remove()
+    end
+
+    local btn = vgui.Create("DButton",DFrame)
+    btn:SetSize(125,35)
+    btn:SetPos(125,460)
+    btn:SetText("Don't remind me again")
+    btn.DoClick = function()
+        RunConsoleCommand("ba2_misc_navmeshwarn",0)
+        LocalPlayer():ChatPrint("You can re-enable the warning later in Options -> Bio-Annihilation II -> Miscellaneous.")
+        DFrame:Remove()
+    end
+end
+
+
+-- Net messages
+net.Receive("BA2NoNavmeshWarn",BA2_NoNavmeshWarn)
 
 -- Kill icons
 killicon.Add("nb_ba2_infected","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
@@ -45,8 +125,7 @@ CreateClientConVar("ba2_cl_mcorewarn",1,true,true,"If enabled, Zambo the Helper 
 CreateClientConVar("ba2_cl_maskhelp",1,true,true,"If enabled, you will see a help message with chat commands when you pick up a gas mask.")
 
 
-
--- Gasmask effects
+-- Gas mask model
 local mask = nil
 hook.Add("PostPlayerDraw","BA2_GasmaskDraw",function(p)
     local hasMask = p:GetNWBool("BA2_GasmaskOn",false)
@@ -70,7 +149,28 @@ hook.Add("PostPlayerDraw","BA2_GasmaskDraw",function(p)
     end
 end)
 
+-- Gas mask + air waste HUD effects
+function BA2_AirwasteSmog()
+    local trace = util.TraceLine({
+        start = LocalPlayer():EyePos(),
+        endpos = LocalPlayer():EyePos() + Vector(0,0,1000),
+        filter = LocalPlayer()
+    })
+
+    if !trace.HitWorld or trace.HitSky then
+        surface.SetDrawColor(0,55,0,215)
+        surface.DrawRect(0,0,ScrW(),ScrH())
+    else
+        surface.SetDrawColor(0,35,0,127)
+        surface.DrawRect(0,0,ScrW(),ScrH())
+    end
+end
+
 hook.Add("HUDPaintBackground","BA2_GamaskOverlay",function()
+    if GetConVar("ba2_misc_airwastevisuals"):GetBool() and #ents.FindByClass("ba2_airwaste") > 0 then
+        BA2_AirwasteSmog()
+    end
+
     if LocalPlayer():GetNWBool("BA2_GasmaskOn",false) and LocalPlayer():GetViewEntity() == LocalPlayer() then
         DrawMaterialOverlay("overlay/ba2_gasmask",0)
 
@@ -91,9 +191,12 @@ hook.Add("HUDPaint","BA2_GasmaskHUD",function()
         draw.DrawText("RESERVE: "..LocalPlayer():GetNWInt("BA2_GasmaskFilters",0),"Trebuchet24",ScrW() * .01,ScrH() * .035,textColor)
     end
 end)
-
-
--- Air waste effects
+hook.Add("DrawOverlay","BA2_CameraSmog",function()
+    local wep = LocalPlayer():GetActiveWeapon()
+    if IsValid(wep) and wep:GetClass() == "gmod_camera" and GetConVar("ba2_misc_airwastevisuals"):GetBool() and #ents.FindByClass("ba2_airwaste") > 0 then
+       BA2_AirwasteSmog() 
+    end
+end)
 
 
 -- Q-menu options
@@ -103,6 +206,18 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
     -- ABOUT
     spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_abt","About","","",function(panel)
         panel:Help("Sninctbur presents:")
+
+        local img = vgui.Create("DImage")
+        img:SetImage("vgui/ba2_splash")
+        img:SetSize(250,250)
+
+        panel:AddItem(img)
+        panel:Help("Closed Beta Update 3")
+
+        local url = vgui.Create("DLabelURL")
+        url:SetText("GitHub Repository")
+        url:SetURL("https://github.com/Sninctbur/BA2")
+        panel:AddItem(url)
     end)
 
     -- CLIENT
@@ -111,7 +226,6 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:Help("These settings change various cosmetic, arbitrary parts of the mod. They only affect you.")
 
         panel:CheckBox("Infection Damage Effect","ba2_cl_infdmgeff")
-        panel:CheckBox("No Multi-Core Warning (NYI)","ba2_cl_mcorewarn")
         panel:CheckBox("Gas Mask Help Text","ba2_cl_maskhelp")
 
         local comboBox = panel:ComboBox("Player Voice","ba2_cl_playervoice")
@@ -136,11 +250,10 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:Help("Custom Models:")
         panel:ControlHelp("Press Help key (F1) to keep the spawnmenu open")
-        local tBox = vgui.Create("DTextEntry",panel)
+        local tBox = vgui.Create("DTextEntry")
         tBox:SetMultiline(true)
-        tBox:SetPos(25,135)
-        tBox:SetSize(400,300)
         tBox:SetVerticalScrollbarEnabled(true)
+        tBox:SetSize(400,300)
 
         local defText = ""
         local tbl = BA2_GetAltModels(true)
@@ -151,10 +264,10 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         tBox:SetValue(defText)
 
-        local rButton = vgui.Create("DButton",panel)
+        panel:AddItem(tBox)
+
+        local rButton = vgui.Create("DButton")
         rButton:SetText("Reload Custom Models")
-        rButton:SetPos(25,460)
-        rButton:SetSize(200,50)
         rButton.DoClick = function()
             BA2_WriteToAltModels(string.Split(tBox:GetValue(),"\n"))
             if LocalPlayer():IsAdmin() then
@@ -162,6 +275,11 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
                 net.WriteTable(string.Split(tBox:GetValue(),"\n"))
                 net.SendToServer()
             end
+        end
+        
+        panel:AddItem(rButton)
+        if(LocalPlayer():IsAdmin() == false) then
+            panel:ControlHelp("You must be a server admin to set the server's custom models")
         end
     end)
 
@@ -260,11 +378,13 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Spawn with Gas Mask","ba2_misc_startwithmask")
         panel:CheckBox("Drop Gas Mask on Death","ba2_misc_deathdropmask")
         panel:CheckBox("Drop Filters on Death","ba2_misc_deathdropfilter")
+        panel:NumSlider("Maximum Filters","ba2_misc_maxfilters",-1,100,0)
+        panel:ControlHelp("Set to -1 for infinite capacity")
 
         panel:Help("")
 
         panel:CheckBox("Air Waste Visuals","ba2_misc_airwastevisuals")
-        panel:CheckBox("Air Waste Wind Shake","ba2_misc_airwasteshake")
-        panel:CheckBox("No Navmesh Warning (NYI)","ba2_misc_navmeshwarn")
+        panel:CheckBox("Air Waste View Shake","ba2_misc_airwasteshake")
+        panel:CheckBox("No Navmesh Warning","ba2_misc_navmeshwarn")
     end)
 end)
