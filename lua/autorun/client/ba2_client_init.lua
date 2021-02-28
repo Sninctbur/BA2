@@ -25,9 +25,9 @@ function BA2_NoNavmeshWarn()
     lbl:SetWrap(true)
     lbl:SetText("Bio-Annihilation II’s zombies are Nextbots, and thus require a Navmesh to function. Unfortunately, the map you’ve just loaded doesn’t have a navmesh."
         .."\nBut that’s no problem! I, Zambo the Help Zombie, am here to help you fix this."
-        .."\n\nTo add a navmesh to this map, you have two feasible options:"
+        .."\n\nTo add a navmesh to this map, you have two simple options:"
         .."\n• Some addons add a navmesh to specific maps. If you can find one for this map, install it and restart the server. It will work immediately!"
-        .."\n• You can also generate the navmesh yourself. This process is straightforward, but can take time. I’ll walk you through it in the steps below."
+        .."\n• You can also generate the navmesh yourself. This process is straightforward, but can take time and may not work correctly depending on the map. I’ll walk you through it in the steps below."
         .."\n\n"
     )
 
@@ -78,8 +78,6 @@ function BA2_NoNavmeshWarn()
         btn.DoClick = function()
             ConfFrame:Remove()
         end
-        --RunConsoleCommand("nav_generate")
-        --DFrame:Remove()
     end
 
     local btn = vgui.Create("DButton",DFrame)
@@ -210,9 +208,10 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         local img = vgui.Create("DImage")
         img:SetImage("vgui/ba2_splash")
         img:SetSize(250,250)
-
+        img:SetKeepAspect(true)
         panel:AddItem(img)
-        panel:Help("Closed Beta Update 3")
+
+        panel:Help("Closed Beta Update 4")
 
         local url = vgui.Create("DLabelURL")
         url:SetText("GitHub Repository")
@@ -248,7 +247,9 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         -- mixer:SetWangs(true) 				-- Show/hide the R G B A indicators 	DEF:true
         -- mixer:SetColor(Color(133,165,180)) 	-- Set the default color
 
-        panel:Help("Custom Models:")
+        panel:CheckBox("Zombie Tint","ba2_cos_tint")
+
+        panel:Help("Custom Model Paths:")
         panel:ControlHelp("Press Help key (F1) to keep the spawnmenu open")
         local tBox = vgui.Create("DTextEntry")
         tBox:SetMultiline(true)
@@ -345,6 +346,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Health","ba2_zom_health",1,500,0)
         panel:NumSlider("Damage Multiplier","ba2_zom_dmgmult",0,10,2)
         panel:NumSlider("Infection Multiplier","ba2_zom_infectionmult",0,10,2)
+        panel:NumSlider("Detection Range","ba2_zom_range",0,50000,0)
         panel:NumSlider("Non-Headshot Damage Multiplier","ba2_zom_nonheadshotmult",0,1,2)
         panel:NumSlider("Infected Raise Time","ba2_zom_emergetime",0,300,0)
         panel:NumSlider("Medic Vial Drop Chance","ba2_zom_medicdropchance",0,100,0)
@@ -354,7 +356,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         comboBox:AddChoice("1. Running Speed (\"Give me some space, will you?\")",1)
         comboBox:AddChoice("2. Full Sprint (\"OH GOD RUN\")",2)
 
-        panel:CheckBox("Attack Props","ba2_zom_breakphys")
+        panel:CheckBox("Attack Props","ba2_zom_breakobjects")
         panel:ControlHelp("The next options require Attack Props")
         panel:CheckBox("Unfreeze/Unconstrain","ba2_zom_breakphys")
         panel:CheckBox("Break Down Doors","ba2_zom_breakdoors")
@@ -386,5 +388,43 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Air Waste Visuals","ba2_misc_airwastevisuals")
         panel:CheckBox("Air Waste View Shake","ba2_misc_airwasteshake")
         panel:CheckBox("No Navmesh Warning","ba2_misc_navmeshwarn")
+        panel:CheckBox("Zombie Kill Credit","ba2_misc_addscore")
     end)
 end)
+
+
+-- Precaching
+print("BA2: Precaching gib models and sounds...")
+local tbl = {
+        "models/ba2/gibs/eyel.mdl",
+        "models/ba2/gibs/eyer.mdl",
+        "models/ba2/gibs/headbackl.mdl",
+        "models/ba2/gibs/headbackr.mdl",
+        "models/ba2/gibs/headfrontl.mdl",
+        "models/ba2/gibs/headfrontr.mdl",
+        "models/ba2/gibs/headtop.mdl",
+        "models/ba2/gibs/jaw.mdl",
+        "models/ba2/gibs/armlowerr2.mdl",
+        "models/ba2/gibs/handr.mdl",
+        "models/ba2/gibs/armlowerl.mdl",
+        "models/ba2/gibs/handl.mdl",
+        "models/ba2/gibs/legupperleft.mdl",
+        "models/ba2/gibs/legupperright.mdl",
+        "models/ba2/gibs/leglowerleft.mdl",
+        "models/ba2/gibs/leglowerright.mdl"
+}
+
+for i,mdl in pairs(tbl) do
+    util.PrecacheModel(mdl)
+end
+
+local tbl = {
+    "ba2_headlessbleed",
+    "ba2_fleshtear",
+    "ba2_gibsplat",
+    "ba2_infectcry"
+}
+
+for i,mdl in pairs(tbl) do
+    util.PrecacheSound(mdl)
+end

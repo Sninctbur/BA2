@@ -17,6 +17,14 @@
 - Zombies can get stuck if they bump into each other while pacing
 - NPCs leave invisible ragdolls when killed by infection
 - Entity names in killfeed only display correctly some of the time
-- Lua error when a dismembered cheaple zombie ragdolls
 - Most physics-based projectile weapons don't collide with zombies
-- Viral Sample has missing textures (I'll figure this out myself I swear)
+
+**Todo**
+- VJ support
+
+**Credits**
+- Sninctbur: One-man team
+- Zet0r: BO3 animation ports
+- Valve: L4D assets
+- Bethesda: FO4 gibs
+- Dpotatoman: Gas mask

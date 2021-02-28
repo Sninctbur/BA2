@@ -175,6 +175,9 @@ end
 function ENT:GravGunPunt(p)
     self.BA2_LastAttacker = p
     self.GravGunPunted = true
+    
+    self:SetHealth(math.min(self:Health(),33))
+    self:BA2_BarrelRecalc()
 
     return true
 end

@@ -29,8 +29,10 @@ function ENT:Initialize()
 end
 
 function ENT:OnRemove()
-    if GetConVar("ba2_hs_cleanup"):GetBool() and IsValid(self.zom) then
-        self.zom:Remove()
+    if SERVER then
+        if GetConVar("ba2_hs_cleanup"):GetBool() and IsValid(self.zom) then
+            self.zom:Remove()
+        end
     end
 end
 

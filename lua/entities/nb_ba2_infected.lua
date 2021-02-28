@@ -15,7 +15,7 @@ function ENT:Initialize()
 	self:SetModel("models/ba2/infected/ba2_handfix.mdl")
 	self:AddFlags(FL_OBJECT)
     self.LoseTargetDist = 2000
-	self.SearchRadius = 10000
+	self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
 	self.BA2_Attacking = false
 	self.BA2_Stunned = false
 	self.BA2_LArmDamage = 0
@@ -31,6 +31,9 @@ function ENT:Initialize()
 		self:SetHealth(hp)
 		self:SetCollisionBounds(self:OBBMins(),self:OBBMaxs())
 		self:SetSolid(SOLID_BBOX)
+		-- self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
+		-- self:SetMoveType(MOVETYPE_STEP)
+		-- self:SetCollisionGroup(COLLISION_GROUP_NPC)
 		self:SetFriction(0)
 		self:SetName("Infected")
 		self.loco:SetStepHeight(36)
@@ -44,6 +47,8 @@ function ENT:Initialize()
 
 		timer.Simple(0,function()
 			if not IsValid(self) then return end
+
+			--self:GetPhysicsObject():SetMass(80)
 
 			-- if BA2_GetMaggotMode() then
 			-- 	self:SetModel("models/player/soldier.mdl")
@@ -67,6 +72,10 @@ function ENT:Initialize()
 				end
 
 				self.InfBody = tbl[math.random(#tbl)]
+
+				if !GetConVar("ba2_cos_usecolor"):GetBool() then
+					self.ColorOverride = Color(255,255,255)
+				end
 			end
 
 			if self.InfBody ~= nil then
@@ -98,6 +107,7 @@ function ENT:Initialize()
 
 				self:SetNoDraw(true)
 				self.InfBody:AddEffects(EF_BONEMERGE)
+
 				self.InfBody:SetColor(self.ColorOverride or BA2_GetDefaultColor())
 
 				if BA2_GetMaggotMode() then
@@ -122,6 +132,7 @@ function ENT:Initialize()
 					
 				-- 	eff:AddEffects(EF_BONEMERGE)
 				-- end
+
 			else
 				print("BA2: Zombie spawned with no model! Despawning...")
 				self:Remove()
@@ -289,7 +300,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					local tr = nil
 					local t2 = nil
 
-					if !(self.BA2_LArmDown and self.BA2_RArmDown) then
+					if GetConVar("ba2_zom_breakobjects"):GetBool() and !(self.BA2_LArmDown and self.BA2_RArmDown) then
 						tr = util.TraceHull({
 							start = self:EyePos(),
 							endpos = self:EyePos() + self:GetForward() * 25,
@@ -305,7 +316,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 						debugoverlay.Line(tr.StartPos,tr.HitPos,.1)
 					end
 
-					if tr ~= nil and tr.Hit and tr2.Hit and not traceEnts[tr2.Hit] and traceEnts[tr.Entity:GetClass()] then
+					if GetConVar("ba2_zom_breakobjects"):GetBool() and tr ~= nil and tr.Hit and tr2.Hit and not traceEnts[tr2.Hit] and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
 						self:ZombieSmash(tr.Entity)
 					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) < 60 and self:VisibleVec(self:GetEnemy():GetPos()) then
 						self:ZombieAttack()
@@ -357,7 +368,7 @@ function ENT:SearchForEnemy()
 	local minEnt = nil
 	local minDist = math.huge
 	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius)) do
-		if self:IsValidEnemy(ent) then
+		if self:IsValidEnemy(ent) and ent:GetMaterialType() ~= MAT_METAL then
 			local dist = ent:GetPos():Distance(self:GetPos())
 			if dist < minDist then
 				minEnt = ent
@@ -377,7 +388,7 @@ function ENT:SearchForCorpse()
 	local minEnt = nil
 	local minDist = math.huge
 	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius / 8)) do
-		if ent:GetClass() == "prop_ragdoll" and ent:GetNoDraw() == false and !ent.BA2_ZomCorpse then
+		if ent:GetClass() == "prop_ragdoll" and ent:GetNoDraw() == false and ent:GetMaterialType() ~= MAT_METAL and !ent.BA2_ZomCorpse then
 			local dist = ent:GetPos():Distance(self:GetPos())
 			if dist < minDist then
 				minEnt = ent
@@ -514,8 +525,8 @@ function ENT:ZombieSmash(ent)
 	}
 
 	timer.Simple(0.6,function()
-		if IsValid(self) and IsValid(ent) then
-			if ent:GetClass() ~= "prop_physics" or ent:GetPos():Distance(self:GetPos()) <= 60 then
+		if IsValid(self) and not self:GetStunned() and IsValid(ent) then
+			if ent:GetPos():Distance(self:GetPos()) <= 100 then
 				local propDmg = math.random(10,20) * GetConVar("ba2_zom_dmgmult"):GetFloat()
 				if self.BA2_LArmDown or self.BA2_RArmDown then
 					propDmg = propDmg * 0.5
@@ -601,7 +612,12 @@ function ENT:ZombieSmash(ent)
 		end
 	end)
 
-	self:PlaySequenceAndWait(attackAnims[math.random(2)])
+	if self.BA2_Crippled then
+		self:PlaySequenceAndWait("crawlgrabmiss")
+	else
+		self:PlaySequenceAndWait(attackAnims[math.random(2)])
+	end
+
 	self:SetAttacking(false)
 end
 
@@ -609,13 +625,13 @@ function ENT:ZombieEat(corpse)
 	self:SwitchActivity( ACT_IDLE )
 
 	timer.Simple(.6,function()
-		if IsValid(self) and IsValid(corpse) then
+		if IsValid(self) and not self:GetStunned() and IsValid(corpse) then
 			self:EmitSound("ba2_corpsechomp",75,75,100)
 
 			local mat = corpse:GetMaterialType()
 			if mat == MAT_ANTLION or mat == MAT_ALIENFLESH then
 				util.Decal("YellowBlood",self:EyePos(),corpse:GetPos(),self)
-			else
+			elseif mat == MAT_CONCRETE or mat == MAT_FLESH or mat == MAT_BLOODYFLESH then -- You tell me why human corpses have the concrete material
 				util.Decal("Blood",self:EyePos(),corpse:GetPos(),self)
 			end
 		end
@@ -993,6 +1009,13 @@ function ENT:OnKilled(dmginfo)
 	-- 	end
 	-- end
 	
+	if GetConVar("ba2_misc_addscore"):GetBool() then
+		local att = dmginfo:GetAttacker()
+		if IsValid(att) and att:IsPlayer() then
+			att:AddFrags(1)
+		end
+	end
+
 	self:Remove()
 end
 
@@ -1119,4 +1142,35 @@ function ENT:Think()
 		end
 	end
 end
+
+
+function ENT:OnContact(ent)
+	local IsVehicle = ent:IsVehicle()
+	if IsVehicle or ent:GetClass() == "prop_physics" then
+		local dmg = DamageInfo()
+		dmg:SetDamageType(DMG_BLAST + DMG_CRUSH)
+		if IsVehicle then
+			dmg:SetDamage(math.max((ent:GetVelocity():Length() - 200) * ent:GetPhysicsObject():GetMass() / 5000,0))
+		else
+			dmg:SetDamage(math.max((ent:GetVelocity():Length() - 200) * ent:GetPhysicsObject():GetMass() / 100,0))
+		end
+		--dmg:SetDamageForce(ent:GetVelocity() * ent:GetPhysicsObject():GetMass() * 0.75)
+		if IsVehicle then
+			if IsValid(ent:GetDriver()) then
+				dmg:SetAttacker(ent:GetDriver())
+			else
+				dmg:SetAttacker(ent)
+			end
+		else
+			dmg:SetAttacker(ent)
+			ent:TakeDamage(dmg:GetDamage(),ent,ent)
+		end
+		dmg:SetInflictor(ent)
+
+		if dmg:GetDamage() > 0 then
+			self:TakeDamageInfo(dmg)
+		end
+	end
+end
+
 -- Hello from the past -Sninctbur

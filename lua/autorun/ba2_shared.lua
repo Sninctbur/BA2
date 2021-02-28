@@ -1,6 +1,6 @@
 -- Shared convars
 CreateConVar("ba2_misc_maskfilters",1,FCVAR_ARCHIVE,"If enabled, gas mask filters will degrade over time and will need to be switched out occasionally.")
-CreateConVar("ba2_misc_airwastevisuals",1,FCVAR_ARCHIVE,[[If enabled, air waste will turn the map's fog green.]])
+CreateConVar("ba2_misc_airwastevisuals",1,FCVAR_ARCHIVE,[[If enabled, air waste will create an opaque fog.]])
 CreateConVar("ba2_misc_airwasteshake",1,FCVAR_ARCHIVE,"If enabled, players outside in Air Waste will have their screen occasionally shake around in the wind.")
 
 -- Custom infected models

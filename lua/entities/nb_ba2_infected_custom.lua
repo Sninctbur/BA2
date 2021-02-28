@@ -7,7 +7,7 @@ ENT.Base = "nb_ba2_infected"
 ENT.Spawnable = false
 
 ENT.InfBody = "CUSTOM"
-ENT.ColorOverride = Color(255,255,255)
+--ENT.ColorOverride = Color(255,255,255)
 
 list.Set( "NPC", "nb_ba2_infected_custom", {
     Name = "Custom Infected",

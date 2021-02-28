@@ -45,13 +45,15 @@ function ENT:Initialize()
 end
 
 function ENT:OnRemove()
-    if #ents.FindByClass(self.ClassName) == 0 then -- I am the one and only *guitar riff*
-        timer.Remove("BA2_HordeSpawner")
-    end
-    if GetConVar("ba2_hs_cleanup"):GetBool() and self.zoms then
-        for i,z in pairs(self.zoms) do
-            if IsValid(z) then
-                z:Remove()
+    if SERVER then
+        if #ents.FindByClass(self.ClassName) == 0 then -- I am the one and only *guitar riff*
+            timer.Remove("BA2_HordeSpawner")
+        end
+        if GetConVar("ba2_hs_cleanup"):GetBool() and self.zoms then
+            for i,z in pairs(self.zoms) do
+                if IsValid(z) then
+                    z:Remove()
+                end
             end
         end
     end
@@ -75,7 +77,7 @@ function ENT:SpawnZoms(amnt)
             timer.Simple(i * .1,function() -- O P T I M I Z E D
                 if IsValid(self) and self.zoms ~= nil and #self.zoms < zomThreshold then
                     local navArea = self.navs[math.random(1,#self.navs)]
-                    while navArea:IsUnderwater() or util.IsInWorld(navArea:GetCenter()) do
+                    while navArea:IsUnderwater() do
                         navArea = self.navs[math.random(1,#self.navs)]
                     end
                     

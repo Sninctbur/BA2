@@ -6,6 +6,7 @@ util.AddNetworkString("BA2ReloadCustoms")
 -- CreateConVar("ba2_cos_defaultcolor_r",133,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
 -- CreateConVar("ba2_cos_defaultcolor_g",165,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
 -- CreateConVar("ba2_cos_defaultcolor_b",180,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
+CreateConVar("ba2_cos_tint",0,FCVAR_ARCHIVE,[[If enabled, Custom Infected will have blue-tinted models like other zombies.]])
 
 CreateConVar("ba2_hs_max",40,FCVAR_ARCHIVE,[[The maximum number of Horde Spawner-created zombies that can be alive at once.
     More zombies means more difficulty - for both you and your machine.]],1)
@@ -45,6 +46,9 @@ CreateConVar("ba2_zom_pursuitspeed",1,FCVAR_ARCHIVE,[[Configures the speed zombi
 CreateConVar("ba2_zom_health",100,FCVAR_ARCHIVE,[[Zombies have this much health. Minimum 1. Only affects new zombies.]],1)
 CreateConVar("ba2_zom_dmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack by this amount.]],0)
 CreateConVar("ba2_zom_infectionmult",1,FCVAR_ARCHIVE,[[Multiply zombie infection per attack by this amount.]],0)
+CreateConVar("ba2_zom_range",10000,FCVAR_ARCHIVE,[[Multiply zombie targeting range by this amount.
+    High values may result in more lag when there are no valid targets.
+    Set to 0 to turn them into the most miserable beings in existence.]],0)
 CreateConVar("ba2_zom_nonheadshotmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage received on non-headshots by this amount.]],0,1)
 CreateConVar("ba2_zom_damagestun",1,FCVAR_ARCHIVE,[[If enabled, zombies will stagger if they take more than half their current health in damage.]])
 CreateConVar("ba2_zom_emergetime",8,FCVAR_ARCHIVE,[[After getting killed by an infectious source, entities will take this long to rise into a zombie.]])
@@ -71,6 +75,7 @@ CreateConVar("ba2_misc_startwithmask",0,FCVAR_ARCHIVE,[[If enabled, all players 
 CreateConVar("ba2_misc_deathdropmask",1,FCVAR_ARCHIVE,[[If enabled, players will drop their gas mask on death.]])
 CreateConVar("ba2_misc_deathdropfilter",1,FCVAR_ARCHIVE,[[If enabled, players will drop all of their gas mask filters on death.]])
 CreateConVar("ba2_misc_headshoteff",1,FCVAR_ARCHIVE,[[If enabled, zombies' heads have a chance to comically explode when they are killed by a headshot.]])
+CreateConVar("ba2_misc_addscore",1,FCVAR_ARCHIVE,[[If enabled, killing a zombie will award a frag to the player who killed them.]])
 
 concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
 
@@ -397,7 +402,7 @@ timer.Create("BA2_ServerTick",1.25,0,function()
             end
 
             local exhaustThres = 25 - (ent:GetMaxHealth() - ent:Health()) / 8
-            if ((ent:IsSprinting() and ent:GetVelocity():Length() > 0) or ent:WaterLevel() == 3) and ent.BA2_Exhaustion < exhaustThres * 1.5 then
+            if ((ent:IsSprinting() and ent:GetVelocity():Length() > 0) or ent:WaterLevel() == 3) and ent.BA2_Exhaustion < 40 then
                 ent.BA2_Exhaustion = ent.BA2_Exhaustion + 5
             elseif ent:GetVelocity():Length() > ent:GetWalkSpeed() then
                 ent.BA2_Exhaustion = ent.BA2_Exhaustion - 1
@@ -502,7 +507,7 @@ hook.Add("PlayerSay","BA2_Chat",function(p,msg)
                 
             else
                 p:EmitSound("npc/combine_soldier/zipline_hitground1.wav")
-                BA2_GasmaskSound(p,"ba2/gasmask/mask_breathe_light.wav")
+                BA2_GasmaskSound(p,p.BA2_MaskSoundName or "ba2/gasmask/mask_breathe_light.wav")
             end
 
             p:SetNWBool("BA2_GasmaskOn",not bool)
