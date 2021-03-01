@@ -30,10 +30,11 @@ function ENT:Initialize()
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)
 		self:SetCollisionBounds(self:OBBMins(),self:OBBMaxs())
-		self:SetSolid(SOLID_BBOX)
+		--self:SetSolid(SOLID_BBOX)
 		-- self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
 		-- self:SetMoveType(MOVETYPE_STEP)
 		-- self:SetCollisionGroup(COLLISION_GROUP_NPC)
+		self:PhysicsInitStatic(SOLID_BBOX)
 		self:SetFriction(0)
 		self:SetName("Infected")
 		self.loco:SetStepHeight(36)
@@ -73,7 +74,7 @@ function ENT:Initialize()
 
 				self.InfBody = tbl[math.random(#tbl)]
 
-				if !GetConVar("ba2_cos_usecolor"):GetBool() then
+				if !GetConVar("ba2_cos_tint"):GetBool() then
 					self.ColorOverride = Color(255,255,255)
 				end
 			end
@@ -1145,8 +1146,10 @@ end
 
 
 function ENT:OnContact(ent)
+	local class = ent:GetClass()
 	local IsVehicle = ent:IsVehicle()
-	if IsVehicle or ent:GetClass() == "prop_physics" then
+
+	if IsVehicle or class == "prop_physics" then
 		local dmg = DamageInfo()
 		dmg:SetDamageType(DMG_BLAST + DMG_CRUSH)
 		if IsVehicle then

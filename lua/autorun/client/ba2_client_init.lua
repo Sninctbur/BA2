@@ -207,15 +207,19 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         local img = vgui.Create("DImage")
         img:SetImage("vgui/ba2_splash")
-        img:SetSize(250,250)
+        img:SetSize(300,350)
         img:SetKeepAspect(true)
         panel:AddItem(img)
 
-        panel:Help("Closed Beta Update 4")
+        panel:Help("Closed Beta Hotfix 4A (GitHub edition)")
 
         local url = vgui.Create("DLabelURL")
         url:SetText("GitHub Repository")
         url:SetURL("https://github.com/Sninctbur/BA2")
+        panel:AddItem(url)
+        local url = vgui.Create("DLabelURL")
+        url:SetText("Developer Profile")
+        url:SetURL("https://steamcommunity.com/id/sninctbur")
         panel:AddItem(url)
     end)
 
