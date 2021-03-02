@@ -14,7 +14,6 @@ end
 function ENT:Initialize()
 	self:SetModel("models/ba2/infected/ba2_handfix.mdl")
 	self:AddFlags(FL_OBJECT)
-    self.LoseTargetDist = 2000
 	self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
 	self.BA2_Attacking = false
 	self.BA2_Stunned = false
@@ -36,12 +35,15 @@ function ENT:Initialize()
 		-- self:SetCollisionGroup(COLLISION_GROUP_NPC)
 		self:PhysicsInitStatic(SOLID_BBOX)
 		self:SetFriction(0)
-		self:SetName("Infected")
 		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
 		
 		for i,npc in pairs(ents.FindByClass("npc_*")) do
 			if npc:IsNPC() then
+				if npc.IsVJBaseSNPC then
+					table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
+					table.insert(npc.CurrentPossibleEnemies,z)
+				end
 				npc:AddEntityRelationship(self,D_HT,1)
 			end
 		end
@@ -152,7 +154,9 @@ function ENT:GetEnemy()
 end
 function ENT:IsValidEnemy(e)
 	local ent = e or self:GetEnemy()
-	return IsValid(ent) and ((ent:IsNPC() and ent:GetNoDraw() == false) or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive()) or (ent:IsNextBot() and !string.StartWith(ent:GetClass(),"nb_ba2_infected")))
+	return IsValid(ent) and ent:GetNoDraw() == false and ((ent:IsNPC()) 
+		or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive()) 
+		or (ent:IsNextBot() and !string.StartWith(ent:GetClass(),"nb_ba2_infected")))
 end
 function ENT:GetAttacking()
 	return self.BA2_Attacking
@@ -326,6 +330,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			end
 		end
 
+		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
 		coroutine.yield()
 	end
 end
@@ -527,7 +532,8 @@ function ENT:ZombieSmash(ent)
 
 	timer.Simple(0.6,function()
 		if IsValid(self) and not self:GetStunned() and IsValid(ent) then
-			if ent:GetPos():Distance(self:GetPos()) <= 100 then
+			local class = ent:GetClass()
+			if ent:GetPos():Distance(self:GetPos()) <= 100 or string.StartWith(class,"func_breakable") then
 				local propDmg = math.random(10,20) * GetConVar("ba2_zom_dmgmult"):GetFloat()
 				if self.BA2_LArmDown or self.BA2_RArmDown then
 					propDmg = propDmg * 0.5
@@ -559,8 +565,10 @@ function ENT:ZombieSmash(ent)
 						prop:Activate()
 						prop:GetPhysicsObject():ApplyForceCenter(self:GetForward() * 5000)
 
-						ent:SetNoDraw(true)
-						ent:SetSolid(SOLID_NONE)
+						if IsValid(ent) then
+							ent:SetNoDraw(true)
+							ent:SetSolid(SOLID_NONE)
+						end
 
 						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
 						if doorRespawn >= 0 then
@@ -827,7 +835,7 @@ end
 
 function ENT:OnInjured(dmginfo)
 	if dmginfo:IsExplosionDamage() and math.random(1,100) <= dmginfo:GetDamage() then
-		if math.random(self:Health()) <= dmginfo:GetDamage() then
+		if math.random(self:GetMaxHealth()) <= dmginfo:GetDamage() then
 			local randNum
 			if self:Health() <= dmginfo:GetDamage() then
 				randNum = math.random(5)

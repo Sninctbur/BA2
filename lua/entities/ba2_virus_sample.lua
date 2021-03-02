@@ -67,7 +67,7 @@ function ENT:PhysicsCollide(data,col)
         util.Decal("BA2_VirusBloodStain",data.HitPos - data.HitNormal,data.HitPos + data.HitNormal)
         self:VialBreak(data.HitEntity)
     elseif l >= 25 then
-        self:EmitSound("physics/cardboard/cardboard_cup_impact_hard"..math.random(1,4)..".wav")
+        self:EmitSound("physics/glass/glass_bottle_impact_hard"..math.random(1,3)..".wav",75,100,math.Clamp(data.Speed / 100,.25,1))
     end
 end
 

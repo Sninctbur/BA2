@@ -1,0 +1,14 @@
+{
+	"title"		:	"Bio-Annihilation II",
+	"type"		:	"npc",
+	"tags"		:	[ "realism","fun" ],
+	"ignore"	:
+	[
+		"*.psd",
+		"*.vcproj",
+		"*.svn*",
+		".git/*",
+		".gitignore",
+		"ReadMeOrIllReadYou.md"
+	]
+}

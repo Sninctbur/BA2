@@ -103,12 +103,22 @@ end
 -- Net messages
 net.Receive("BA2NoNavmeshWarn",BA2_NoNavmeshWarn)
 
--- Kill icons
+-- Kill icons and names
 killicon.Add("nb_ba2_infected","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
 killicon.Add("nb_ba2_infected_citizen","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
 killicon.Add("nb_ba2_infected_rebel","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
 killicon.Add("nb_ba2_infected_combine","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
 killicon.Add("ba2_infection_manager","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
+
+language.Add("nb_ba2_infected","Infected")
+language.Add("nb_ba2_infected_citizen","Infected")
+language.Add("nb_ba2_infected_rebel","Infected")
+language.Add("nb_ba2_infected_combine","Infected")
+language.Add("nb_ba2_infected_custom","Infected")
+language.Add("ba2_airwaste","Air Waste")
+language.Add("ba2_barrel","Contaminant Barrel")
+language.Add("ba2_infection_manager"," ") -- SpOoOoOoOoOoOoky killfeed
+language.Add("ba2_virus_sample","Viral Sample")
 
 
 -- Clientside convars
@@ -171,7 +181,6 @@ hook.Add("HUDPaintBackground","BA2_GamaskOverlay",function()
 
     if LocalPlayer():GetNWBool("BA2_GasmaskOn",false) and LocalPlayer():GetViewEntity() == LocalPlayer() then
         DrawMaterialOverlay("overlay/ba2_gasmask",0)
-
     end
 end)
 hook.Add("HUDPaint","BA2_GasmaskHUD",function()
@@ -190,6 +199,8 @@ hook.Add("HUDPaint","BA2_GasmaskHUD",function()
     end
 end)
 hook.Add("DrawOverlay","BA2_CameraSmog",function()
+    if not IsValid(LocalPlayer()) then return end
+
     local wep = LocalPlayer():GetActiveWeapon()
     if IsValid(wep) and wep:GetClass() == "gmod_camera" and GetConVar("ba2_misc_airwastevisuals"):GetBool() and #ents.FindByClass("ba2_airwaste") > 0 then
        BA2_AirwasteSmog() 
@@ -211,7 +222,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         img:SetKeepAspect(true)
         panel:AddItem(img)
 
-        panel:Help("Closed Beta Hotfix 4A (GitHub edition)")
+        panel:Help(BA2_MODVERSION)
 
         local url = vgui.Create("DLabelURL")
         url:SetText("GitHub Repository")

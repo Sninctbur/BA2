@@ -13,14 +13,9 @@
 - Sometimes after a long time, zombie grab slow stops working
 
 **Less important/more funny, but still want to fix before release:**
-- Zombies drown in waist high water
+- Zombies drown in waist high water (would be a tedious fix)
 - Zombies can get stuck if they bump into each other while pacing
-- NPCs leave invisible ragdolls when killed by infection
-- Entity names in killfeed only display correctly some of the time
 - Most physics-based projectile weapons don't collide with zombies
-
-**Todo**
-- VJ support
 
 **Credits**
 - Sninctbur: One-man team

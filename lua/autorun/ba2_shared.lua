@@ -68,7 +68,7 @@ function BA2_GetCustomInfs()
     return BA2_CustomInfs
 end
 
--- Tables
+--  Global variables
 BA2_ConvertibleNpcs = {
     ["npc_kleiner"] = true,
     ["npc_mossman"] = true,
@@ -111,6 +111,8 @@ BA2_ZombieTypes = {
 }
 
 DMG_BIOVIRUS = 83598
+
+BA2_MODVERSION = "Release Candidate 1 (Git edition)"
 
 -- Sounds
 sound.Add({

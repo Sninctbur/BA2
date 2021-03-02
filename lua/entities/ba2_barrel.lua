@@ -185,6 +185,15 @@ function ENT:PhysicsCollide(data,col)
     if self.GravGunPunted == true then
         self:BA2_BarrelExplode()
     end
+
+    if (data.Speed > 700 and data.DeltaTime > 0.3) then
+        if data.Speed > 1000 and !self:IsPlayerHolding() then
+            self:TakeDamage(data.Speed / 50,self,self)
+        end
+        self:EmitSound("physics/metal/metal_barrel_impact_hard"..math.random(1,7)..".wav")
+    elseif data.Speed > 50 then
+        self:EmitSound("physics/metal/metal_barrel_impact_soft"..math.random(1,4)..".wav",75,100,math.Clamp(data.Speed / 700,.25,1))
+    end
 end
 
 end

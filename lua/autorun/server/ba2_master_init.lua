@@ -1,4 +1,5 @@
 include("autorun/ba2_shared.lua")
+include("ba2/methods.lua")
 
 util.AddNetworkString("BA2NoNavmeshWarn")
 util.AddNetworkString("BA2ReloadCustoms")
@@ -89,33 +90,11 @@ net.Receive("BA2ReloadCustoms",function(l,p)
 end)
 
 -- Unique functions
-function BA2_AddInfection(ent,amnt)
-    if amnt < 0 then return end
-    if not IsValid(ent) or not (ent:IsNPC() or ent:IsPlayer()) then return end
-    if ent:IsPlayer() and !ent:Alive() then return end
-    if ent:IsNPC() and BA2_ConvertibleNpcs[ent:GetClass()] == nil then return end
-
-    amnt = math.floor(amnt)
-    if ent:IsPlayer() then
-        amnt = amnt * GetConVar("ba2_inf_plymult"):GetFloat()
-    elseif ent:IsNPC() then
-        amnt = amnt * GetConVar("ba2_inf_npcmult"):GetFloat()
-    end
-
-    if amnt == 0 then return end
-
-    if ent.BA2Infection == nil then
-        ent.BA2Infection = amnt
-    else
-        ent.BA2Infection = ent.BA2Infection + amnt
-    end
-end
-
 function BA2_InfectionTick(ent)
     if ent.BA2Infection == nil or ent.BA2Infection == 0 then return end
 
     if ent:IsPlayer() and ent:GetInfoNum("ba2_cl_infdmgeff",1) == 1 then
-        ent:ScreenFade(SCREENFADE.IN,Color(74,127,0,64),.75,0)
+        ent:ScreenFade(SCREENFADE.IN,Color(74,127,0,32),.75,0)
     end
 
     local dmg = DamageInfo()
@@ -167,38 +146,9 @@ function BA2_InfectionTick(ent)
 end
 
 
-function BA2_InfectionManager()
-    if not IsValid(BA2_InfManager) then
-        BA2_InfManager = ents.Create("ba2_infection_manager")
-        BA2_InfManager:Spawn()
-        BA2_InfManager:Activate()
-    end
-
-    return BA2_InfManager
-end
-
-function BA2_RaiseZombie(ent)
-    local zom = ents.Create("nb_ba2_infected")
-    zom:SetPos(ent:GetPos())
-
-    zom.InfBody = ent:GetModel()
-    zom.InfSkin = ent:GetSkin()
-    zom.InfBodyGroups = {}
-    zom.InfVoice = ent.InfVoice or nil
-    if GetConVar("ba2_zom_emergetime"):GetFloat() == 0 then
-        zom.noRise = true
-    end
-
-    for i = 1,ent:GetNumBodyGroups() do
-        table.insert(zom.InfBodyGroups, ent:GetBodygroup(i))
-    end
-
-    zom:Spawn()
-    zom:Activate()
-end
-function BA2_InfectionDeath(ent,inflict,killer)
+function BA2_InfectionDeath(ent,inflict,killer,dmg)
     --if ent.BA2Infection == 0 and not GetConVar("ba2_inf_romeromode"):GetBool() then return end
-    if ent:IsNPC() and ((!GetConVar("ba2_inf_npcraise"):GetInt() or !BA2_ConvertibleNpcs[ent:GetClass()])) then return end
+    if ent:IsNPC() and (!GetConVar("ba2_inf_npcraise"):GetInt() or (!BA2_ConvertibleNpcs[ent:GetClass()] and !ent.IsVJBaseSNPC_Human)) then return end
     if string.StartWith(ent:GetClass(),"nb_ba2_infected") then return end
 
     if GetConVar("ba2_inf_romeromode"):GetBool() or (!GetConVar("ba2_inf_killtoraise"):GetBool() and ent.BA2Infection > 0)
@@ -240,6 +190,10 @@ function BA2_InfectionDeath(ent,inflict,killer)
             end
 
             body:Spawn()
+            body:Activate()
+            if dmg ~= nil then
+                body:GetPhysicsObject():ApplyForceCenter(dmg:GetDamageForce())
+            end
 
             timer.Simple(riseTime,function()
                 if IsValid(body) then
@@ -249,10 +203,12 @@ function BA2_InfectionDeath(ent,inflict,killer)
             end)
         end
 
-        ent:Remove()
-        if ent:IsPlayer() then
-            ent:GetRagdollEntity():Remove()
-        end
+        timer.Simple(0,function()
+            SafeRemoveEntity(ent)
+            if ent:IsPlayer() then
+                SafeRemoveEntity(ent:GetRagdollEntity())
+            end
+        end)
     end
 end
 
@@ -381,6 +337,15 @@ end)
 hook.Add("OnEntityCreated","ba2_npcZomRelation",function(npc)
     if npc:IsNPC() then
         for i,z in pairs(ents.FindByClass("nb_ba2_infected*")) do
+            if npc.IsVJBaseSNPC then
+                timer.Simple(0,function()
+                    if IsValid(npc) then
+                        table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
+                        table.insert(npc.CurrentPossibleEnemies,z)
+                    end
+                end)
+            end
+
             npc:AddEntityRelationship(z,D_HT,1)
         end
     end
@@ -450,7 +415,11 @@ end)
 
 
 hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent)
-    BA2_InfectionDeath(p,inf,ent)
+    if GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
+        or (IsValid(p) and p.BA2Infection > 0) 
+        or inf:GetClass() == BA2_InfectionManager()) then
+        BA2_InfectionDeath(p,inf,ent)
+    end
 
     p.BA2Infection = 0
     p.BA2_Exhaustion = 0
@@ -469,20 +438,28 @@ hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent)
         end
     end
 end)
-hook.Add("OnNPCKilled","BA2_NPCDeath",function(npc,ent,inf)
-    if string.StartWith(npc:GetClass(),"nb_ba2_infected") then return end
-    BA2_InfectionDeath(npc,inf,ent)
-end)
-hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
-    -- if dmg:GetDamageCustom() == DMG_BIOVIRUS and e:Health() <= dmg:GetDamage() then
-    --     BA2_InfectionDeath(e,dmg:GetInflictor(),dmg:GetAttacker())
-    -- end
 
+hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
     if e:IsPlayer() and e:GetNWBool("BA2_GasmaskOn",false) and dmg:GetDamage() < e:Health() and dmg:GetDamage() * math.random(0,20) / 10 >= e:Health() / 4  then
         BA2_GasmaskSound(e)
         e:EmitSound("ba2/gasmask/mask_pain"..math.random(1,2)..".wav",90,110)
     end
+
+    if (dmg:GetInflictor() == BA2_InfectionManager() or GetConVar("ba2_inf_romeromode"):GetBool()) and (e:IsNPC() or e:IsPlayer()) and e:Health() <= dmg:GetDamage() then
+        if e:IsPlayer() and GetConVar("ba2_inf_plyraise"):GetBool() then
+            gamemode.Call("PlayerDeath",e,dmg:GetInflictor(),dmg:GetAttacker(),dmg)
+            e:KillSilent()
+            SafeRemoveEntity(e:GetRagdollEntity())
+            return true
+        elseif e:IsNPC() and BA2_ConvertibleNpcs[e:GetClass()] and GetConVar("ba2_inf_npcraise"):GetBool() then
+            BA2_InfectionDeath(e,dmg:GetInflictor(),dmg:GetAttacker(),dmg)
+            e:Remove()
+            gamemode.Call("OnNPCKilled",e,dmg:GetAttacker(),dmg:GetInflictor(),dmg)
+            return true
+        end
+    end
 end)
+
 
 hook.Add("PlayerSay","BA2_Chat",function(p,msg)
     if !p:Alive() then return end

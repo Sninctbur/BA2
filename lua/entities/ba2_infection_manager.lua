@@ -5,7 +5,9 @@ ENT.Type = "anim"
 ENT.PrintName = " " -- SpoOoOoOoOky kill feed
 
 function ENT:Initialize()
-    print("BA2: Infection manager created!")
+    if SERVER then
+        print("BA2: Infection manager created!")
+    end
     self:SetNoDraw(true)
 end
 
