@@ -107,11 +107,13 @@ function ENT:SpawnZoms(amnt)
                         end)
                     end)
 
-                    timer.Simple(6,function()
-                        if IsValid(zom) and (zom:GetEnemy() == nil or !zom:IsInWorld()) then
-                            zom:Remove()
-                        end
-                    end)
+                    if GetConVar("ba2_hs_notargetclean"):GetBool() then
+                        timer.Simple(6,function()
+                            if IsValid(zom) and (zom:GetEnemy() == nil or !zom:IsInWorld()) then
+                                zom:Remove()
+                            end
+                        end)
+                    end
                 else return end
             end)
         end

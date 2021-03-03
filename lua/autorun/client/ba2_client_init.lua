@@ -129,7 +129,6 @@ CreateClientConVar("ba2_cl_playervoice",-1,true,true,[[The voice your zombie wil
     1: Female
     2: Combine]],-1,2
 )
-CreateClientConVar("ba2_cl_mcorewarn",1,true,true,"If enabled, Zambo the Helper Zombie will notify you if gmod_mcore_test is disabled when you load in.")
 CreateClientConVar("ba2_cl_maskhelp",1,true,true,"If enabled, you will see a help message with chat commands when you pick up a gas mask.")
 
 
@@ -308,6 +307,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:Help("These settings change the behavior of the Horde Spawner and Point Spawner entities.")
         
         panel:CheckBox("Clean Up on Remove","ba2_hs_cleanup")
+        panel:CheckBox("Clean Up Targetless Zombies","ba2_hs_notargetclean")
         panel:NumSlider("Maximum Zombies","ba2_hs_max",1,100,0)
         panel:NumSlider("Spawn Interval","ba2_hs_interval",0.1,30,1)
         panel:NumSlider("Safe Radius","ba2_hs_saferadius",0,10000,0)

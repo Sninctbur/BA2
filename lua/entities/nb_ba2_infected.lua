@@ -14,7 +14,6 @@ end
 function ENT:Initialize()
 	self:SetModel("models/ba2/infected/ba2_handfix.mdl")
 	self:AddFlags(FL_OBJECT)
-	self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
 	self.BA2_Attacking = false
 	self.BA2_Stunned = false
 	self.BA2_LArmDamage = 0
@@ -25,6 +24,7 @@ function ENT:Initialize()
 	--self.InfBody = "models/Humans/Group01/male_02.mdl"
 
 	if SERVER then
+		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
 		local hp = GetConVar("ba2_zom_health"):GetInt()
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)

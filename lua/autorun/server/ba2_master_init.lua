@@ -25,6 +25,7 @@ CreateConVar("ba2_hs_appearance",1,FCVAR_ARCHIVE,[[Configures the type of zombie
 )
 CreateConVar("ba2_hs_cleanup",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will also remove all of the zombies it created when it gets deleted.]])
 concommand.Add("ba2_hs_delete",BA2_DestroyHS,nil,"Destroys the active Horde Spawner, if it exists.")
+CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually respawn zombies who do not find a target within 6 sceonds of spawning.]])
 
 CreateConVar("ba2_inf_contagionmult",1,FCVAR_ARCHIVE,[[Mutliply the distance the Bio-Virus can spread to others by this amount.
     Set to 0 to disable contagion.]],0)
@@ -414,11 +415,11 @@ hook.Add("PostCleanupMap","BA2_PostCleanup",function()
 end)
 
 
-hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent)
+hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent,dmg)
     if GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
         or (IsValid(p) and p.BA2Infection > 0) 
         or inf:GetClass() == BA2_InfectionManager()) then
-        BA2_InfectionDeath(p,inf,ent)
+        BA2_InfectionDeath(p,inf,ent,dmg)
     end
 
     p.BA2Infection = 0
