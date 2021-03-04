@@ -36,6 +36,12 @@ function BA2_InfectionManager()
 end
 
 function BA2_RaiseZombie(ent)
+    local maxZoms = GetConVar("ba2_inf_maxzoms"):GetInt()
+
+    if maxZoms > 0 and #ents.FindByClass("nb_ba2_infected*") >= maxZoms then
+        return
+    end
+
     local zom = ents.Create("nb_ba2_infected")
     zom:SetPos(ent:GetPos())
 

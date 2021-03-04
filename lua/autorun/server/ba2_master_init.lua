@@ -38,6 +38,9 @@ CreateConVar("ba2_inf_npcraise",1,FCVAR_ARCHIVE,[[If enabled, NPCs killed by the
 CreateConVar("ba2_inf_dmgmult",1,FCVAR_ARCHIVE,[[Multiply damage dealt by infection by this amount.]],0)
 CreateConVar("ba2_inf_killtoraise",1,FCVAR_ARCHIVE,[[If enabled, the Bio-Virus or one of its hosts must directly kill a victim to raise them into a zombie.
     This means that you can kill an infected entity to prevent them from becoming a zombie, or commit suicide to prevent yourself from being raised.]])
+CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise new zombies if there are this many active zombies; instead, the corpse despawns.
+    More zombies means more difficulty - for both you and your machine.
+    Set to 0 to enable expert mode: unlimited capacity.]],0)
 CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
 
 CreateConVar("ba2_zom_pursuitspeed",1,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
@@ -121,7 +124,7 @@ function BA2_InfectionTick(ent)
 
             if IsValid(ent) and GetConVar("ba2_inf_contagionmult"):GetFloat() > 0 and !BA2_GetActiveMask(ent) then
                 for i,e in pairs(ents.FindInSphere(ent:GetPos(),100 * GetConVar("ba2_inf_contagionmult"):GetFloat())) do
-                    if e ~= ent and !BA2_GetActiveMask(ent) then
+                    if e ~= ent and !BA2_GetActiveMask(ent) and !(ent:IsNPC() and e:IsPlayer() and GetConVar("ai_ignoreplayers"):GetBool()) then
                         if e.BA2Infection == nil then
                             e.BA2Infection = 1
                         elseif e.BA2Infection < ent.BA2Infection then
@@ -225,6 +228,7 @@ function BA2_ZombieGrab(zom,ent)
         ent:ViewPunch(Angle(10,0,0))
     else
         ent.GrabPos = ent:GetPos()
+        ent:StopMoving()
     end
 
     timer.Create(zom:EntIndex().."-grab",0,0,function()

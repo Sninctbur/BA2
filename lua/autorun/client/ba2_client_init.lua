@@ -161,7 +161,7 @@ function BA2_AirwasteSmog()
     local trace = util.TraceLine({
         start = LocalPlayer():EyePos(),
         endpos = LocalPlayer():EyePos() + Vector(0,0,1000),
-        filter = LocalPlayer()
+        mask = MASK_PLAYERSOLID_BRUSHONLY
     })
 
     if !trace.HitWorld or trace.HitSky then
@@ -343,7 +343,8 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Player Infection","ba2_inf_plymult",0,10,2)
         panel:NumSlider("NPC Infection","ba2_inf_npcmult",0,10,2)
         panel:NumSlider("Infection Damage","ba2_inf_dmgmult",0,10,2)
-        panel:ControlHelp("Set multipliers to 0 to disable their respective features")
+        panel:NumSlider("Maximum Zombies","ba2_inf_maxzoms",0,100,0)
+        panel:ControlHelp("Set values to 0 to disable their respective features")
     end)
 
     -- ZOMBIES
@@ -370,6 +371,8 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         comboBox:AddChoice("0. Pacing Speed (\"*yawn* Let me get a drink...\")",0)
         comboBox:AddChoice("1. Running Speed (\"Give me some space, will you?\")",1)
         comboBox:AddChoice("2. Full Sprint (\"OH GOD RUN\")",2)
+
+        panel:Help("")
 
         panel:CheckBox("Attack Props","ba2_zom_breakobjects")
         panel:ControlHelp("The next options require Attack Props")
@@ -407,39 +410,4 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
     end)
 end)
 
-
--- Precaching
-print("BA2: Precaching gib models and sounds...")
-local tbl = {
-        "models/ba2/gibs/eyel.mdl",
-        "models/ba2/gibs/eyer.mdl",
-        "models/ba2/gibs/headbackl.mdl",
-        "models/ba2/gibs/headbackr.mdl",
-        "models/ba2/gibs/headfrontl.mdl",
-        "models/ba2/gibs/headfrontr.mdl",
-        "models/ba2/gibs/headtop.mdl",
-        "models/ba2/gibs/jaw.mdl",
-        "models/ba2/gibs/armlowerr2.mdl",
-        "models/ba2/gibs/handr.mdl",
-        "models/ba2/gibs/armlowerl.mdl",
-        "models/ba2/gibs/handl.mdl",
-        "models/ba2/gibs/legupperleft.mdl",
-        "models/ba2/gibs/legupperright.mdl",
-        "models/ba2/gibs/leglowerleft.mdl",
-        "models/ba2/gibs/leglowerright.mdl"
-}
-
-for i,mdl in pairs(tbl) do
-    util.PrecacheModel(mdl)
-end
-
-local tbl = {
-    "ba2_headlessbleed",
-    "ba2_fleshtear",
-    "ba2_gibsplat",
-    "ba2_infectcry"
-}
-
-for i,mdl in pairs(tbl) do
-    util.PrecacheSound(mdl)
-end
+-- See ba2_precache.lua for precaching

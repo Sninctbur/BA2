@@ -77,7 +77,7 @@ function ENT:Think()
                 local trace = util.TraceLine({
                     start = ent:GetPos(),
                     endpos = ent:GetPos() + Vector(0,0,1000),
-                    filter = ent
+                    mask = MASK_PLAYERSOLID_BRUSHONLY
                 })
         
                 if !trace.HitWorld or trace.HitSky then
@@ -101,7 +101,7 @@ function ENT:Think()
         local trace = util.TraceLine({
             start = LocalPlayer():GetPos(),
             endpos = LocalPlayer():GetPos() + Vector(0,0,1000),
-            filter = LocalPlayer()
+            mask = MASK_PLAYERSOLID_BRUSHONLY
         })
 
         if trace.HitWorld and !trace.HitSky then

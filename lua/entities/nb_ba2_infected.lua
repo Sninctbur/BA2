@@ -265,7 +265,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			end
 
 			if self.NavTarget ~= nil then -- ChaseEnemy code robbed shamelessly from the wiki, because fuck reinventing the wheel
-				self.loco:FaceTowards(self.NavTarget)
+				--self.loco:FaceTowards(self.NavTarget)
 				if path:GetAge() > .5 then
 					pathComplete = path:Compute( self, self.NavTarget )	-- Compute the path towards the enemies position
 				end
@@ -573,10 +573,12 @@ function ENT:ZombieSmash(ent)
 						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
 						if doorRespawn >= 0 then
 							timer.Simple(doorRespawn,function()
-								ent:SetNoDraw(false)
-								ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-								ent:SetSolid(SOLID_OBB)
-								ent.BA2_DoorHealth = 200
+								if IsValid(ent) then
+									ent:SetNoDraw(false)
+									ent:SetCollisionGroup(COLLISION_GROUP_NONE)
+									ent:SetSolid(SOLID_OBB)
+									ent.BA2_DoorHealth = 200
+								end
 
 								SafeRemoveEntity(prop)
 							end)
