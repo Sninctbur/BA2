@@ -29,7 +29,7 @@ function ENT:Use(p)
         p:SetNWInt("BA2_GasmaskFilters",p:GetNWInt("BA2_GasmaskFilters",0) + 1)
         --p:ChatPrint("You've found a gas mask filter!")
 
-        self:EmitSound("physics/metal/weapon_footstep1.wav")
+        self:EmitSound("items/gunpickup2.wav")
         self:Remove()
     end
 end

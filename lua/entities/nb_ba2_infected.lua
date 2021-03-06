@@ -393,7 +393,7 @@ function ENT:SearchForCorpse()
 
 	local minEnt = nil
 	local minDist = math.huge
-	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius / 8)) do
+	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius / 4)) do
 		if ent:GetClass() == "prop_ragdoll" and ent:GetNoDraw() == false and ent:GetMaterialType() ~= MAT_METAL and !ent.BA2_ZomCorpse then
 			local dist = ent:GetPos():Distance(self:GetPos())
 			if dist < minDist then

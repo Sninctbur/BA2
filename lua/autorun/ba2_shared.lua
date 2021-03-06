@@ -112,7 +112,7 @@ BA2_ZombieTypes = {
 
 DMG_BIOVIRUS = 83598
 
-BA2_MODVERSION = "Release Candidate 3 (Git edition)"
+BA2_MODVERSION = "Release Update 0 (Git Edition)"
 
 -- Sounds
 sound.Add({

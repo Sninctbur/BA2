@@ -15,7 +15,7 @@ CreateConVar("ba2_hs_interval",1,FCVAR_ARCHIVE,[[The Horde Spawner will wait thi
     The lower this is, the faster zombies will spawn.]],0.1)
 CreateConVar("ba2_hs_saferadius",500,FCVAR_ARCHIVE,[[The Horde Spawner cannot spawn zombies closer to potential targets than this distance.
     You may need to turn this value down on very small maps.]],0)
-CreateConVar("ba2_hs_appearance",1,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
+CreateConVar("ba2_hs_appearance",5,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
     0: Citizens
     1: Rebels
     2: Cobmine
@@ -156,7 +156,7 @@ function BA2_InfectionDeath(ent,inflict,killer,dmg)
     if string.StartWith(ent:GetClass(),"nb_ba2_infected") then return end
 
     if GetConVar("ba2_inf_romeromode"):GetBool() or (!GetConVar("ba2_inf_killtoraise"):GetBool() and ent.BA2Infection > 0)
-         or inflict == BA2_InfectionManager() or (IsValid(killer) and string.StartWith(killer:GetClass(),"nb_ba2_infected")) then
+         or inflict == BA2_InfectionManager() or (dmg ~= nil and dmg:GetDamageCustom() == DMG_BIOVIRUS) or (IsValid(killer) and string.StartWith(killer:GetClass(),"nb_ba2_infected")) then
         local riseTime = GetConVar("ba2_zom_emergetime"):GetFloat()
 
         if riseTime == 0 then
@@ -195,6 +195,7 @@ function BA2_InfectionDeath(ent,inflict,killer,dmg)
 
             body:Spawn()
             body:Activate()
+            body:SetVelocity(ent:GetVelocity())
             if dmg ~= nil then
                 body:GetPhysicsObject():ApplyForceCenter(dmg:GetDamageForce())
             end
@@ -450,7 +451,9 @@ hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
         e:EmitSound("ba2/gasmask/mask_pain"..math.random(1,2)..".wav",90,110)
     end
 
-    if (dmg:GetInflictor() == BA2_InfectionManager() or GetConVar("ba2_inf_romeromode"):GetBool()) and (e:IsNPC() or e:IsPlayer()) and e:Health() <= dmg:GetDamage() then
+    if e:Health() <= 0 then return end
+    if (GetConVar("ba2_inf_romeromode"):GetBool() or dmg:GetInflictor() == BA2_InfectionManager() or dmg:GetDamageCustom() == DMG_BIOVIRUS) 
+        and (e:IsNPC() or e:IsPlayer()) and e:Health() <= dmg:GetDamage() then
         if e:IsPlayer() and GetConVar("ba2_inf_plyraise"):GetBool() then
             gamemode.Call("PlayerDeath",e,dmg:GetInflictor(),dmg:GetAttacker(),dmg)
             e:KillSilent()
