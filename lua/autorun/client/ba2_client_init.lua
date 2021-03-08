@@ -103,6 +103,29 @@ end
 -- Net messages
 net.Receive("BA2NoNavmeshWarn",BA2_NoNavmeshWarn)
 
+net.Receive("BA2ZomDeathNotice",function()
+    local attacker = net.ReadEntity()
+    local inflictor = net.ReadEntity()
+    local team = nil
+    local name = net.ReadString()
+
+    if attacker:IsPlayer() then
+        name = attacker:GetName()
+        team = attacker:Team()
+    else
+        name = "#"..attacker:GetClass()
+        team = 83598
+    end
+    if attacker == inflictor and (attacker:IsPlayer() or attacker:IsNPC()) then
+        inflictor = attacker:GetActiveWeapon() or inflictor
+    end
+    if !IsValid(inflictor) then
+        inflictor = game.GetWorld()
+    end
+
+    GAMEMODE:AddDeathNotice(name,team,inflictor:GetClass(),"Infected",83598)
+end)
+
 -- Kill icons and names
 killicon.Add("nb_ba2_infected","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
 killicon.Add("nb_ba2_infected_citizen","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
@@ -221,7 +244,11 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         img:SetKeepAspect(true)
         panel:AddItem(img)
 
-        panel:Help(BA2_MODVERSION)
+        if BA2_GIT then
+            panel:Help(BA2_MODVERSION.." (Git Edition)")
+        else
+            panel:Help(BA2_MODVERSION.." (Workshop Edition)")
+        end
 
         local url = vgui.Create("DLabelURL")
         url:SetText("GitHub Repository")

@@ -38,6 +38,7 @@ ENT.InfBody = {
 }
 
 ENT.InfBodyGroups = {}
+ENT.noRise = true
 
 list.Set( "NPC", "nb_ba2_infected_rebel", {
     Name = "Infected Rebel",

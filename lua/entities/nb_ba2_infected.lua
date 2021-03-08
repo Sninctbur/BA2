@@ -303,14 +303,14 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 				if self:IsValidEnemy() then
 					local tr = nil
-					local t2 = nil
+					local tr2 = nil
 
 					if GetConVar("ba2_zom_breakobjects"):GetBool() and !(self.BA2_LArmDown and self.BA2_RArmDown) then
 						tr = util.TraceHull({
 							start = self:EyePos(),
 							endpos = self:EyePos() + self:GetForward() * 25,
-							maxs = Vector(),
-							mins = self:OBBMins(),
+							maxs = Vector(8,8,16),
+							mins = Vector(-8,-8,-16),
 							filter = self
 						})
 						tr2 = util.TraceLine({
@@ -323,7 +323,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 					if GetConVar("ba2_zom_breakobjects"):GetBool() and tr ~= nil and tr.Hit and tr2.Hit and not traceEnts[tr2.Hit] and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
 						self:ZombieSmash(tr.Entity)
-					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) < 60 and self:VisibleVec(self:GetEnemy():GetPos()) then
+					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) < 60 and self:VisibleVec(self:GetEnemy():GetPos()) and !(self:GetEnemy():IsPlayer() and self:GetEnemy():InVehicle()) then
 						self:ZombieAttack()
 					end
 				end
@@ -533,7 +533,16 @@ function ENT:ZombieSmash(ent)
 	timer.Simple(0.6,function()
 		if IsValid(self) and not self:GetStunned() and IsValid(ent) then
 			local class = ent:GetClass()
-			if ent:GetPos():Distance(self:GetPos()) <= 100 or string.StartWith(class,"func_breakable") then
+
+			local tr = util.TraceHull({
+				start = self:EyePos(),
+				endpos = self:EyePos() + self:GetForward() * 75,
+				maxs = Vector(8,8,16),
+				mins = Vector(-8,-8,-16),
+				filter = self
+			})
+
+			if tr.Hit or string.StartWith(class,"func_breakable") then
 				local propDmg = math.random(10,20) * GetConVar("ba2_zom_dmgmult"):GetFloat()
 				if self.BA2_LArmDown or self.BA2_RArmDown then
 					propDmg = propDmg * 0.5
@@ -789,6 +798,10 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 	if trace.HitGroup == HITGROUP_HEAD then
 		dmginfo:SetDamage(dmginfo:GetDamage() * 4)
 
+		if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmginfo:GetDamage() > self:Health() then
+			dmginfo:SetDamage(dmginfo:GetDamage() * 2)
+		end
+
 		if BA2_GetMaggotMode() then
 			self:EmitSound("player/crit_hit"..math.random(2,6)..".wav",95)
 		end
@@ -866,7 +879,12 @@ function ENT:OnInjured(dmginfo)
 end
 
 function ENT:OnKilled(dmginfo)
-	hook.Call("OnNPCKilled", GAMEMODE, self, dmginfo:GetAttacker(), dmginfo:GetInflictor())
+	--gamemode.Call("OnNPCKilled",self,dmginfo:GetAttacker(),dmginfo:GetInflictor())
+	net.Start("BA2ZomDeathNotice")
+	net.WriteEntity(dmginfo:GetAttacker())
+	net.WriteEntity(dmginfo:GetInflictor())
+	net.Broadcast()
+
 	if not IsValid(self.InfBody) then self:Remove() return end
 	
 	self:ZombieVox("hurt")
@@ -1184,6 +1202,11 @@ function ENT:OnContact(ent)
 			self:TakeDamageInfo(dmg)
 		end
 	end
+end
+
+-- Error handling
+function ENT:GetActiveWeapon()
+	return NULL
 end
 
 -- Hello from the past -Sninctbur

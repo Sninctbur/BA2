@@ -3,6 +3,7 @@ include("ba2/methods.lua")
 
 util.AddNetworkString("BA2NoNavmeshWarn")
 util.AddNetworkString("BA2ReloadCustoms")
+util.AddNetworkString("BA2ZomDeathNotice")
 
 -- CreateConVar("ba2_cos_defaultcolor_r",133,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
 -- CreateConVar("ba2_cos_defaultcolor_g",165,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
@@ -461,8 +462,8 @@ hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
             return true
         elseif e:IsNPC() and BA2_ConvertibleNpcs[e:GetClass()] and GetConVar("ba2_inf_npcraise"):GetBool() then
             BA2_InfectionDeath(e,dmg:GetInflictor(),dmg:GetAttacker(),dmg)
-            e:Remove()
             gamemode.Call("OnNPCKilled",e,dmg:GetAttacker(),dmg:GetInflictor(),dmg)
+            e:Remove()
             return true
         end
     end

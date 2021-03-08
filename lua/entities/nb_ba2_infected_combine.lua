@@ -14,6 +14,7 @@ ENT.InfVoice = 2 -- combine muttering
 --ENT.ColorOverride = Color(255,255,255)
 
 ENT.InfBodyGroups = {}
+ENT.noRise = true
 
 list.Set( "NPC", "nb_ba2_infected_combine", {
     Name = "Infected Combine",
