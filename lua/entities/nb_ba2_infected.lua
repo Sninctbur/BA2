@@ -142,6 +142,8 @@ function ENT:Initialize()
 			end
 		end)
 	end
+	
+	getmetatable(self).IsNPC = function() return true end -- IsNPC() will return true, so other addons see us as NPCs and not just nextbots
 	--self:CallOnRemove("KillSounds",function() self:KillSounds() end)
 end
 
@@ -1207,6 +1209,16 @@ end
 -- Error handling
 function ENT:GetActiveWeapon()
 	return NULL
+end
+
+-- If anyone wants a desposition, it's hatred
+function ENT:Disposition(ent)
+	return D_HT
+end
+
+-- We hate everyone anyways, so anyone else calling this should just be discarded
+function ENT:AddEntityRelationship(target, disposition, priority) 
+
 end
 
 -- Hello from the past -Sninctbur
