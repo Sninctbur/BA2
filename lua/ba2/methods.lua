@@ -8,6 +8,26 @@ function BA2_AddInfection(ent,amnt)
     if ent:IsPlayer() and !ent:Alive() then return end
     if (ent:IsNPC() and (BA2_ConvertibleNpcs[ent:GetClass()] == nil and ent.IsVJBaseSNPC_Human ~= true)) then return end
     
+    -- logic to check if player currently has immunity to DMG_NERVEGAS from some other addon
+    -- this might be a really bad way to do this but OH WELL!
+    local dmg = DamageInfo()
+    dmg:SetDamage(math.random(3,5) * GetConVar("ba2_inf_dmgmult"):GetFloat())
+    dmg:SetDamageType(DMG_NERVEGAS)
+    dmg:SetDamageCustom(DMG_BIOVIRUS)
+    dmg:SetAttacker(BA2_InfectionManager())
+    dmg:SetInflictor(BA2_InfectionManager())
+    local lastArmor = nil
+    local lastHealth = ent:Health()
+    if ent:IsPlayer() and ent:Armor() > 0 then
+        lastArmor = ent:Armor()
+        ent:SetArmor(0)
+    end
+    ent:TakeDamageInfo(dmg)
+    if lastArmor then
+        ent:SetArmor(lastArmor)
+    end
+    if ent:Health() == lastHealth then return end
+
     amnt = math.floor(amnt)
     if ent:IsPlayer() then
         amnt = amnt * GetConVar("ba2_inf_plymult"):GetFloat()
