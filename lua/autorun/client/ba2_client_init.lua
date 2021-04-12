@@ -236,13 +236,16 @@ local adminString = "You must be a server admin to modify these settings. You're
 hook.Add("PopulateToolMenu","ba2_options",function(panel)
     -- ABOUT
     spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_abt","About","","",function(panel)
-        panel:Help("Sninctbur presents:")
+        panel:Help("Gamma presents, a modified Sninctbur addon:")
 
         local img = vgui.Create("DImage")
         img:SetImage("vgui/ba2_splash")
         img:SetSize(300,350)
         img:SetKeepAspect(true)
         panel:AddItem(img)
+
+        panel:Help("GAMMA EDITION")
+        panel:Help("This is NOT the original mod!")
 
         if BA2_GIT then
             panel:Help(BA2_MODVERSION.." (Git Edition)")
@@ -252,10 +255,14 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         local url = vgui.Create("DLabelURL")
         url:SetText("GitHub Repository")
-        url:SetURL("https://github.com/Sninctbur/BA2")
+        url:SetURL("https://github.com/GammaWhiskey/BA2")
         panel:AddItem(url)
         local url = vgui.Create("DLabelURL")
-        url:SetText("Developer Profile")
+        url:SetText("Developer's Profile")
+        url:SetURL("https://steamcommunity.com/id/gammawhiskey/")
+        panel:AddItem(url)
+        local url = vgui.Create("DLabelURL")
+        url:SetText("Original Creator's Profile")
         url:SetURL("https://steamcommunity.com/id/sninctbur")
         panel:AddItem(url)
     end)
