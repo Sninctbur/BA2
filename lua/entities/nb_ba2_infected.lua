@@ -1303,4 +1303,15 @@ function ENT:SetNPCState(state)
 
 end
 
+function ENT:SetCondition(condition)
+
+end
+
+function ENT:ClearCondition(condition)
+
+end
+
+function ENT:HasCondition(condition)
+	return false 
+end
 -- Hello from the past -Sninctbur
