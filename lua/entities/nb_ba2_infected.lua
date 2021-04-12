@@ -1295,5 +1295,12 @@ function ENT:Classify()
 	return 0
 end
 
+function ENT:GetNPCState()
+	return 0
+end
+
+function ENT:SetNPCState(state)
+
+end
 
 -- Hello from the past -Sninctbur
