@@ -236,13 +236,16 @@ local adminString = "You must be a server admin to modify these settings. You're
 hook.Add("PopulateToolMenu","ba2_options",function(panel)
     -- ABOUT
     spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_abt","About","","",function(panel)
-        panel:Help("Sninctbur presents:")
+        panel:Help("Gamma presents, a modified Sninctbur addon:")
 
         local img = vgui.Create("DImage")
         img:SetImage("vgui/ba2_splash")
         img:SetSize(300,350)
         img:SetKeepAspect(true)
         panel:AddItem(img)
+
+        panel:Help("GAMMA EDITION")
+        panel:Help("This is NOT the original mod!")
 
         if BA2_GIT then
             panel:Help(BA2_MODVERSION.." (Git Edition)")
@@ -252,10 +255,14 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         local url = vgui.Create("DLabelURL")
         url:SetText("GitHub Repository")
-        url:SetURL("https://github.com/Sninctbur/BA2")
+        url:SetURL("https://github.com/GammaWhiskey/BA2")
         panel:AddItem(url)
         local url = vgui.Create("DLabelURL")
-        url:SetText("Developer Profile")
+        url:SetText("Developer's Profile")
+        url:SetURL("https://steamcommunity.com/id/gammawhiskey/")
+        panel:AddItem(url)
+        local url = vgui.Create("DLabelURL")
+        url:SetText("Original Creator's Profile")
         url:SetURL("https://steamcommunity.com/id/sninctbur")
         panel:AddItem(url)
     end)
@@ -393,11 +400,9 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Non-Headshot Damage Multiplier","ba2_zom_nonheadshotmult",0,1,2)
         panel:NumSlider("Infected Raise Time","ba2_zom_emergetime",0,300,0)
         panel:NumSlider("Medic Vial Drop Chance","ba2_zom_medicdropchance",0,100,0)
-
-        local comboBox = panel:ComboBox("Pursuit Speed","ba2_zom_pursuitspeed")
-        comboBox:AddChoice("0. Pacing Speed (\"*yawn* Let me get a drink...\")",0)
-        comboBox:AddChoice("1. Running Speed (\"Give me some space, will you?\")",1)
-        comboBox:AddChoice("2. Full Sprint (\"OH GOD RUN\")",2)
+        panel:NumSlider("Pursuit Speed","ba2_zom_pursuitspeed_ge",45,300,0)
+        panel:NumSlider("Arm Break Multiplier","ba2_zom_armbreakmultiplier",0,1,2)
+        panel:NumSlider("Leg Break Multiplier","ba2_zom_legbreakmultiplier",0,1,2)
 
         panel:Help("")
 
@@ -408,6 +413,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:NumSlider("Door Respawn Time","ba2_zom_doorrespawn",0,300,0)
         panel:ControlHelp("Set to 0 to not respawn doors until map cleanup")
+        panel:NumSlider("Door Damage Multiplier","ba2_zom_doordmgmult",0,20,0)
     end)
 
     -- MISCELLANEOUS

@@ -9,6 +9,8 @@
 		"*.svn*",
 		".git/*",
 		".gitignore",
+		".gitattributes",
+		"LICENSE.md",
 		"ReadMeOrIllReadYou.md"
 	]
 }

@@ -9,6 +9,18 @@ if SERVER then
 	include("autorun/server/ba2_master_init.lua")
 end
 
+BA2_CustomMetaTable = nil
+
+local function deepCopy(original)
+	local copy = {}
+	for k, v in pairs(original) do
+		if type(v) == "table" then
+			v = deepCopy(v)
+		end
+		copy[k] = v
+	end
+	return copy
+end
 
 -- Initialization
 function ENT:Initialize()
@@ -143,7 +155,14 @@ function ENT:Initialize()
 		end)
 	end
 	
-	getmetatable(self).IsNPC = function() return true end -- IsNPC() will return true, so other addons see us as NPCs and not just nextbots
+	-- getmetatable(self).IsNPC = function() return true end -- IsNPC() will return true, so other addons see us as NPCs and not just nextbots
+	if not BA2_CustomMetaTable then
+		BA2_CustomMetaTable = deepCopy(getmetatable(self))
+		BA2_CustomMetaTable.IsNPC = function() return true end
+	end
+
+	-- ...this works!
+	debug.setmetatable(self, BA2_CustomMetaTable)
 	--self:CallOnRemove("KillSounds",function() self:KillSounds() end)
 end
 
@@ -337,11 +356,26 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 	end
 end
 function ENT:PursuitSpeed()
-	local PursuitConfig = GetConVar("ba2_zom_pursuitspeed"):GetInt()
+	local PursuitConfig = GetConVar("ba2_zom_pursuitspeed_ge"):GetInt()
 	if self.BA2_Crippled then
 		self:SwitchActivity(ACT_WALK)
 		self.loco:SetDesiredSpeed(45 * self.BA2_SpeedMult)
 		self.loco:SetAcceleration(400)
+	else
+		if PursuitConfig >= 250 then
+			self:SwitchActivity(ACT_SPRINT)
+			self.loco:SetAcceleration(3200)
+		elseif PursuitConfig >= 100 then
+			self:SwitchActivity(ACT_RUN)
+			self.loco:SetAcceleration(1600)
+		else
+			self:SwitchActivity(ACT_WALK)
+			self.loco:SetAcceleration(400)
+		end
+
+		self.loco:SetDesiredSpeed(PursuitConfig * self.BA2_SpeedMult)
+	end
+	--[[
 	elseif PursuitConfig == 1 then
 		self:SwitchActivity(ACT_RUN)
 		self.loco:SetDesiredSpeed(120 * self.BA2_SpeedMult)
@@ -355,6 +389,7 @@ function ENT:PursuitSpeed()
 		self.loco:SetDesiredSpeed(45 * self.BA2_SpeedMult)
 		self.loco:SetAcceleration(400)
 	end
+	]]
 end
 
 function ENT:SearchForEnemy()
@@ -545,12 +580,12 @@ function ENT:ZombieSmash(ent)
 			})
 
 			if tr.Hit or string.StartWith(class,"func_breakable") then
-				local propDmg = math.random(10,20) * GetConVar("ba2_zom_dmgmult"):GetFloat()
+				local propDmg = math.random(10,20) * GetConVar("ba2_zom_doordmgmult"):GetFloat()
 				if self.BA2_LArmDown or self.BA2_RArmDown then
 					propDmg = propDmg * 0.5
 				end
-
-				if ent:GetClass() == "prop_door_rotating" then
+				
+				if string.StartWith(ent:GetClass(),"func_door") or string.StartWith(ent:GetClass(),"prop_door") then
 					if ent.BA2_DoorHealth == nil then
 						ent.BA2_DoorHealth = 200 - propDmg
 					elseif ent.BA2_DoorHealth <= 0 then
@@ -565,8 +600,8 @@ function ENT:ZombieSmash(ent)
 
 						local prop = ents.Create("prop_physics")
 						prop:SetModel(ent:GetModel())
-						prop:SetSkin(ent:GetSkin())
-						prop:SetBodygroup(0,ent:GetBodygroup(0))
+						prop:SetSkin(ent:GetSkin() or 0)
+						prop:SetBodygroup(0,ent:GetBodygroup(0) or 0)
 						prop:SetPos(ent:GetPos())
 						prop:SetAngles(ent:GetAngles())
 						prop:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
@@ -582,7 +617,7 @@ function ENT:ZombieSmash(ent)
 						end
 
 						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
-						if doorRespawn >= 0 then
+						if doorRespawn > 0 then
 							timer.Simple(doorRespawn,function()
 								if IsValid(ent) then
 									ent:SetNoDraw(false)
@@ -813,15 +848,18 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		end
 	end
 
+	local ArmBreakMultiplier = GetConVar("ba2_zom_armbreakmultiplier"):GetFloat()
+	local LegBreakMultiplier = GetConVar("ba2_zom_armbreakmultiplier"):GetFloat()
+
 	if trace.HitGroup == HITGROUP_LEFTARM and self.BA2_LArmDown == nil then
 		self.BA2_LArmDamage = self.BA2_LArmDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * .5 then
+		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * ArmBreakMultiplier then
 			self:BreakLArm(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
 	elseif trace.HitGroup == HITGROUP_RIGHTARM and self.BA2_RArmDown == nil then
 		self.BA2_RArmDamage = self.BA2_RArmDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * .5 then
+		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * ArmBreakMultiplier then
 			self:BreakRArm(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
@@ -829,13 +867,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 
 	if trace.HitGroup == HITGROUP_LEFTLEG and self.BA2_LLegDown == nil then
 		self.BA2_LLegDamage = self.BA2_LLegDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() * .75 then
+		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() * LegBreakMultiplier then
 			self:BreakLLeg(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
 	elseif trace.HitGroup == HITGROUP_RIGHTLEG and self.BA2_RLegDown == nil then
 		self.BA2_RLegDamage = self.BA2_RLegDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() * .75 then
+		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() * LegBreakMultiplier then
 			self:BreakRLeg(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
@@ -1220,5 +1258,42 @@ end
 function ENT:AddEntityRelationship(target, disposition, priority) 
 
 end
+
+-- WELCOME TO STUB CITY
+-- i'm not putting the entire npc api in here, i'll just eliminate issues as they pop up
+-- these seem to be the functions other addons care about most so...
+
+function ENT:AddRelationship(relationstring)
+
+end
+
+function ENT:AlertSound()
+
+end
+
+function ENT:AutoMovement(interval, target)
+
+end
+
+function ENT:CapabilitiesAdd(capabilities)
+
+end
+
+function ENT:CapabilitiesClear()
+
+end
+
+function ENT:CapabilitiesGet()
+	return 0
+end
+
+function ENT:CapabilitiesRemove(capabilities)
+
+end
+
+function ENT:Classify()
+	return 0
+end
+
 
 -- Hello from the past -Sninctbur

@@ -44,13 +44,14 @@ CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise n
     Set to 0 to enable expert mode: unlimited capacity.]],0)
 CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
 
-CreateConVar("ba2_zom_pursuitspeed",1,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
-    0: Pacing speed ("*yawn* Let me get a drink...")
-    1: Running ("Give me some space, will you?")
-    2: Full sprint ("OH GOD RUN")]],0,2
+CreateConVar("ba2_zom_pursuitspeed_ge",120,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
+    45: Pacing speed ("*yawn* Let me get a drink...")
+    120: Running ("Give me some space, will you?")
+    300: Full sprint ("OH GOD RUN")]],0
 )
 CreateConVar("ba2_zom_health",100,FCVAR_ARCHIVE,[[Zombies have this much health. Minimum 1. Only affects new zombies.]],1)
 CreateConVar("ba2_zom_dmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack by this amount.]],0)
+CreateConVar("ba2_zom_doordmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per door hit by this amount.]],0)
 CreateConVar("ba2_zom_infectionmult",1,FCVAR_ARCHIVE,[[Multiply zombie infection per attack by this amount.]],0)
 CreateConVar("ba2_zom_range",10000,FCVAR_ARCHIVE,[[Multiply zombie targeting range by this amount.
     High values may result in more lag when there are no valid targets.
@@ -62,6 +63,8 @@ CreateConVar("ba2_zom_armdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have 
     Each lost arm halves damage output. If both arms are broken, the zombie cannot grab targets or break down barricades.]])
 CreateConVar("ba2_zom_legdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have their legs broken.
     Legs are harder to break than arms, but breaking one forces them to crawl, making them slower and easier to headshot.]])
+CreateConVar("ba2_zom_armbreakmultiplier",0.5,FCVAR_ARCHIVE,[[Zombies must have this percentage of their health missing before their arms can be removed.]],0,1)
+CreateConVar("ba2_zom_legbreakmultiplier",0.75,FCVAR_ARCHIVE,[[Zombies must have this percentage of their health missing before their arms can be removed.]],0,1)
 CreateConVar("ba2_zom_explimbdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies have a chance to lose a random limb when they take explosive damage. (NYI)]])
 CreateConVar("ba2_zom_medicdropchance",20,FCVAR_ARCHIVE,[[The percent chance for an Infected Rebel with a Medic model to drop a Health Vial on death.
     Set to 0 to disable this feature.]],0,100)
