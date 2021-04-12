@@ -393,7 +393,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Non-Headshot Damage Multiplier","ba2_zom_nonheadshotmult",0,1,2)
         panel:NumSlider("Infected Raise Time","ba2_zom_emergetime",0,300,0)
         panel:NumSlider("Medic Vial Drop Chance","ba2_zom_medicdropchance",0,100,0)
-        panel:NumSlider("Pursuit Speed","ba2_zom_pursuitspeed",45,300,0)
+        panel:NumSlider("Pursuit Speed","ba2_zom_pursuitspeed_ge",45,300,0)
         panel:NumSlider("Arm Break Multiplier","ba2_zom_armbreakmultiplier",0,1,2)
         panel:NumSlider("Leg Break Multiplier","ba2_zom_legbreakmultiplier",0,1,2)
 

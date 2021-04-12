@@ -9,6 +9,18 @@ if SERVER then
 	include("autorun/server/ba2_master_init.lua")
 end
 
+BA2_CustomMetaTable = nil
+
+local function deepCopy(original)
+	local copy = {}
+	for k, v in pairs(original) do
+		if type(v) == "table" then
+			v = deepCopy(v)
+		end
+		copy[k] = v
+	end
+	return copy
+end
 
 -- Initialization
 function ENT:Initialize()
@@ -143,7 +155,14 @@ function ENT:Initialize()
 		end)
 	end
 	
-	getmetatable(self).IsNPC = function() return true end -- IsNPC() will return true, so other addons see us as NPCs and not just nextbots
+	-- getmetatable(self).IsNPC = function() return true end -- IsNPC() will return true, so other addons see us as NPCs and not just nextbots
+	if not BA2_CustomMetaTable then
+		BA2_CustomMetaTable = deepCopy(getmetatable(self))
+		BA2_CustomMetaTable.IsNPC = function() return true end
+	end
+
+	-- ...this works!
+	debug.setmetatable(self, BA2_CustomMetaTable)
 	--self:CallOnRemove("KillSounds",function() self:KillSounds() end)
 end
 
@@ -337,7 +356,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 	end
 end
 function ENT:PursuitSpeed()
-	local PursuitConfig = GetConVar("ba2_zom_pursuitspeed"):GetInt()
+	local PursuitConfig = GetConVar("ba2_zom_pursuitspeed_ge"):GetInt()
 	if self.BA2_Crippled then
 		self:SwitchActivity(ACT_WALK)
 		self.loco:SetDesiredSpeed(45 * self.BA2_SpeedMult)
@@ -598,7 +617,7 @@ function ENT:ZombieSmash(ent)
 						end
 
 						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
-						if doorRespawn >= 0 then
+						if doorRespawn > 0 then
 							timer.Simple(doorRespawn,function()
 								if IsValid(ent) then
 									ent:SetNoDraw(false)
@@ -1239,5 +1258,42 @@ end
 function ENT:AddEntityRelationship(target, disposition, priority) 
 
 end
+
+-- WELCOME TO STUB CITY
+-- i'm not putting the entire npc api in here, i'll just eliminate issues as they pop up
+-- these seem to be the functions other addons care about most so...
+
+function ENT:AddRelationship(relationstring)
+
+end
+
+function ENT:AlertSound()
+
+end
+
+function ENT:AutoMovement(interval, target)
+
+end
+
+function ENT:CapabilitiesAdd(capabilities)
+
+end
+
+function ENT:CapabilitiesClear()
+
+end
+
+function ENT:CapabilitiesGet()
+	return 0
+end
+
+function ENT:CapabilitiesRemove(capabilities)
+
+end
+
+function ENT:Classify()
+	return 0
+end
+
 
 -- Hello from the past -Sninctbur

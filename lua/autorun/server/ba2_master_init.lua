@@ -44,7 +44,7 @@ CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise n
     Set to 0 to enable expert mode: unlimited capacity.]],0)
 CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
 
-CreateConVar("ba2_zom_pursuitspeed",120,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
+CreateConVar("ba2_zom_pursuitspeed_ge",120,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
     45: Pacing speed ("*yawn* Let me get a drink...")
     120: Running ("Give me some space, will you?")
     300: Full sprint ("OH GOD RUN")]],0
