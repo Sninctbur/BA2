@@ -849,7 +849,7 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 	end
 
 	local ArmBreakMultiplier = GetConVar("ba2_zom_armbreakmultiplier"):GetFloat()
-	local LegBreakMultiplier = GetConVar("ba2_zom_armbreakmultiplier"):GetFloat()
+	local LegBreakMultiplier = GetConVar("ba2_zom_legbreakmultiplier"):GetFloat()
 
 	if trace.HitGroup == HITGROUP_LEFTARM and self.BA2_LArmDown == nil then
 		self.BA2_LArmDamage = self.BA2_LArmDamage + dmginfo:GetDamage()
