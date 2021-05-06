@@ -1,6 +1,31 @@
 -- This file is separated from the main init function to allow modders to use BA2's most useful functions without reloading the server code again
 
-if SERVER then
+
+-- SHARED ------------------------------------------------------------------
+function BA2_GetValidAppearances()
+    local zomTypes = {}
+    if GetConVar("ba2_hs_appearance_0"):GetBool() then
+        table.insert(zomTypes,BA2_ZombieTypes[0])
+    end
+    if GetConVar("ba2_hs_appearance_1"):GetBool() then
+        table.insert(zomTypes,BA2_ZombieTypes[1])
+    end
+    if GetConVar("ba2_hs_appearance_2"):GetBool() then
+        table.insert(zomTypes,BA2_ZombieTypes[2])
+    end
+    if GetConVar("ba2_hs_appearance_3"):GetBool() then
+        table.insert(zomTypes,BA2_ZombieTypes[3])
+    end -- there's probably a shorter way to do this
+
+    if #zomTypes == 0 then
+        zomTypes = table.Copy(BA2_ZombieTypes)
+    end
+
+    return zomTypes
+end
+
+
+if SERVER then -- SERVER ---------------------------------------------------
 
 function BA2_AddInfection(ent,amnt)
     if amnt < 0 then return end
@@ -54,7 +79,7 @@ function BA2_RaiseZombie(ent)
     end
 
     for i = 1,ent:GetNumBodyGroups() do
-        table.insert(zom.InfBodyGroups, ent:GetBodygroup(i))
+        table.insert(zom.InfBodyGroups,ent:GetBodygroup(i))
     end
 
     zom:Spawn()

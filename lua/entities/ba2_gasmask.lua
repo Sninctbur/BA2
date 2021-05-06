@@ -29,7 +29,7 @@ function ENT:Use(p)
         p:SetNWBool("BA2_GasmaskOwned",true)
         p:SetNWInt("BA2_GasmaskFilterPct",self.BA2_FilterPct)
 
-            if p:GetInfoNum("ba2_cl_maskhelp",1) == 1 then
+        if p:GetInfoNum("ba2_cl_maskhelp",1) == 1 then
             p:ChatPrint([[
 You found a gas mask! It's now stored on your person.
 Type "!gasmask" in chat to put it on or take it off.
@@ -42,6 +42,7 @@ Type "!cfilter" to check on your current filter and see how many you have.
 Type "!dfilter" to drop one of your filters.]])
             end
             p:ChatPrint("\nDisable \"Gas Mask Help Text\" under Client settings to turn off this chat spam.")
+            p:ChatPrint("^^^ OPEN CHAT FOR INSTRUCTIONS! ^^^")
         end
         
         self:EmitSound("npc/combine_soldier/zipline_hitground1.wav")

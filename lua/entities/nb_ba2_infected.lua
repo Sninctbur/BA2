@@ -24,7 +24,8 @@ function ENT:Initialize()
 	--self.InfBody = "models/Humans/Group01/male_02.mdl"
 
 	if SERVER then
-		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
+		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
+		self.HullType = HULL_HUMAN
 		local hp = GetConVar("ba2_zom_health"):GetInt()
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)
@@ -34,6 +35,7 @@ function ENT:Initialize()
 		-- self:SetMoveType(MOVETYPE_STEP)
 		-- self:SetCollisionGroup(COLLISION_GROUP_NPC)
 		self:PhysicsInitStatic(SOLID_BBOX)
+		self:SetSolidMask(MASK_SOLID)
 		self:SetFriction(0)
 		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
@@ -47,6 +49,13 @@ function ENT:Initialize()
 				npc:AddEntityRelationship(self,D_HT,1)
 			end
 		end
+
+		-- Credit to GammaWhiskey for this block of code
+		-- if GetConVar("ba2_misc_isnpc"):GetBool() and not BA2_CustomMetaTable then
+		-- 	BA2_CustomMetaTable = table.Copy(getmetatable(self))
+		-- 	BA2_CustomMetaTable.IsNPC = function() return true end
+		-- 	debug.setmetatable(self, BA2_CustomMetaTable)
+		-- end
 
 		timer.Simple(0,function()
 			if not IsValid(self) then return end
@@ -99,11 +108,11 @@ function ENT:Initialize()
 		
 				if self.InfBodyGroups and #self.InfBodyGroups > 0 then
 					for i = 1,#self.InfBodyGroups do
-						self.InfBody:SetBodygroup(i-1,self.InfBodyGroups[i])
+						self.InfBody:SetBodygroup(i,self.InfBodyGroups[i])
 					end
 				else
 					for i = 1,#self.InfBody:GetBodyGroups() do
-						self.InfBody:SetBodygroup(i-1,math.random(0,self.InfBody:GetBodygroupCount(i-1)))
+						self.InfBody:SetBodygroup(i,math.random(0,self.InfBody:GetBodygroupCount(i-1)))
 					end
 				end
 				self.InfBody:SetSkin(self.InfSkin or math.random(0,self.InfBody:SkinCount()-1))
@@ -170,6 +179,16 @@ end
 function ENT:SetStunned(a)
 	self.BA2_Stunned = a
 end
+function ENT:GetHullType()
+	return self.HullType
+end
+function ENT:SetHullType(a)
+	self.HullType = a
+end
+-- function ENT:IsNPC()
+-- 	return GetConVar("ba2_zom_isnpc"):GetBool()
+-- end
+
 
 
 -- AI
@@ -202,6 +221,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 	while true do
 		if GetConVar("ai_disabled"):GetBool() then
+			self:SwitchActivity( ACT_IDLE )
 			-- n o t h i n g
 		elseif self:WaterLevel() == 3 then
 			--self:SetSequence("Choked_Barnacle")
@@ -543,7 +563,7 @@ function ENT:ZombieSmash(ent)
 			})
 
 			if tr.Hit or string.StartWith(class,"func_breakable") then
-				local propDmg = math.random(10,20) * GetConVar("ba2_zom_dmgmult"):GetFloat()
+				local propDmg = math.random(10,20) * GetConVar("ba2_zom_propdmgmult"):GetFloat()
 				if self.BA2_LArmDown or self.BA2_RArmDown then
 					propDmg = propDmg * 0.5
 				end
@@ -580,7 +600,7 @@ function ENT:ZombieSmash(ent)
 						end
 
 						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
-						if doorRespawn >= 0 then
+						if doorRespawn > 0 then
 							timer.Simple(doorRespawn,function()
 								if IsValid(ent) then
 									ent:SetNoDraw(false)
@@ -735,6 +755,7 @@ end
 function ENT:BreakLLeg(dmginfo)
 	self.BA2_LLegDown = true
 	self.BA2_Crippled = true
+	self.HullType = HULL_TINY
 	self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",75)
 	
 	self:DeflateBones({
@@ -765,6 +786,7 @@ end
 function ENT:BreakRLeg(dmginfo)
 	self.BA2_RLegDown = true
 	self.BA2_Crippled = true
+	self.HullType = HULL_TINY
 	self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",75)
 	
 	self:DeflateBones({
@@ -816,13 +838,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * .5 then
 			self:BreakLArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	elseif trace.HitGroup == HITGROUP_RIGHTARM and self.BA2_RArmDown == nil then
 		self.BA2_RArmDamage = self.BA2_RArmDamage + dmginfo:GetDamage()
 		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * .5 then
 			self:BreakRArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	end
 
 	if trace.HitGroup == HITGROUP_LEFTLEG and self.BA2_LLegDown == nil then
@@ -830,13 +852,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() * .75 then
 			self:BreakLLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	elseif trace.HitGroup == HITGROUP_RIGHTLEG and self.BA2_RLegDown == nil then
 		self.BA2_RLegDamage = self.BA2_RLegDamage + dmginfo:GetDamage()
 		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() * .75 then
 			self:BreakRLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	end
 
 	if trace.HitGroup ~= HITGROUP_HEAD then
@@ -879,7 +901,10 @@ function ENT:OnInjured(dmginfo)
 end
 
 function ENT:OnKilled(dmginfo)
-	--gamemode.Call("OnNPCKilled",self,dmginfo:GetAttacker(),dmginfo:GetInflictor())
+	if engine.ActiveGamemode() == "horde" then
+		gamemode.Call("OnNPCKilled",self,dmginfo:GetAttacker(),dmginfo:GetInflictor()) -- Hardcode to fix horde
+	end
+
 	net.Start("BA2ZomDeathNotice")
 	net.WriteEntity(dmginfo:GetAttacker())
 	net.WriteEntity(dmginfo:GetInflictor())
@@ -1201,12 +1226,77 @@ function ENT:OnContact(ent)
 		if dmg:GetDamage() > 0 then
 			self:TakeDamageInfo(dmg)
 		end
+	elseif class == "prop_combine_ball" then
+		local dmg = DamageInfo()
+		dmg:SetDamageType(DMG_DISSOLVE)
+		dmg:SetDamage(self:Health())
+		self:TakeDamageInfo(dmg)
 	end
 end
 
 -- Error handling
 function ENT:GetActiveWeapon()
 	return NULL
+end
+
+function ENT:Disposition(ent)
+	return D_HT
+end
+
+function ENT:AddEntityRelationship(t,d,p)
+end
+
+-- Credit to GammaWhiskey for going through the trouble of adding these dummy functions
+function ENT:AddRelationship(relationstring)
+
+end
+
+function ENT:AlertSound()
+
+end
+
+function ENT:AutoMovement(interval, target)
+
+end
+
+function ENT:CapabilitiesAdd(capabilities)
+
+end
+
+function ENT:CapabilitiesClear()
+
+end
+
+function ENT:CapabilitiesGet()
+	return 0
+end
+
+function ENT:CapabilitiesRemove(capabilities)
+
+end
+
+function ENT:Classify()
+	return 0
+end
+
+function ENT:GetNPCState()
+	return 0
+end
+
+function ENT:SetNPCState(state)
+
+end
+
+function ENT:SetCondition(condition)
+
+end
+
+function ENT:ClearCondition(condition)
+
+end
+
+function ENT:HasCondition(condition)
+	return false 
 end
 
 -- Hello from the past -Sninctbur
