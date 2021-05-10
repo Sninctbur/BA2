@@ -16,17 +16,21 @@ CreateConVar("ba2_hs_interval",1,FCVAR_ARCHIVE,[[The Horde Spawner will wait thi
     The lower this is, the faster zombies will spawn.]],0.1)
 CreateConVar("ba2_hs_saferadius",500,FCVAR_ARCHIVE,[[The Horde Spawner cannot spawn zombies closer to potential targets than this distance.
     You may need to turn this value down on very small maps.]],0)
-CreateConVar("ba2_hs_appearance",5,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
-    0: Citizens
-    1: Rebels
-    2: Cobmine
-    3: Custom
-    4: Any of the above
-    5: Any except Custom Infected]],0,5
-)
-CreateConVar("ba2_hs_cleanup",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will also remove all of the zombies it created when it gets deleted.]])
+-- CreateConVar("ba2_hs_appearance",5,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
+--     0: Citizens
+--     1: Rebels
+--     2: Cobmine
+--     3: Custom
+--     4: Any of the above
+--     5: Any except Custom Infected]],0,5
+-- )
+CreateConVar("ba2_hs_appearance_0",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Citizens.]])
+CreateConVar("ba2_hs_appearance_1",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Rebels.]])
+CreateConVar("ba2_hs_appearance_2",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Combine.]])
+CreateConVar("ba2_hs_appearance_3",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Custom Infected.]])
+CreateConVar("ba2_hs_cleanup",1,FCVAR_ARCHIVE,[[If enabled, Spawners will also remove all of the zombies it created when it gets deleted.]])
 concommand.Add("ba2_hs_delete",BA2_DestroyHS,nil,"Destroys the active Horde Spawner, if it exists.")
-CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually respawn zombies who do not find a target within 6 sceonds of spawning.]])
+CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually replace zombies who do not find a target within 6 sceonds of spawning.]])
 
 CreateConVar("ba2_inf_contagionmult",1,FCVAR_ARCHIVE,[[Mutliply the distance the Bio-Virus can spread to others by this amount.
     Set to 0 to disable contagion.]],0)
@@ -51,12 +55,14 @@ CreateConVar("ba2_zom_pursuitspeed_ge",120,FCVAR_ARCHIVE,[[Configures the speed 
 )
 CreateConVar("ba2_zom_health",100,FCVAR_ARCHIVE,[[Zombies have this much health. Minimum 1. Only affects new zombies.]],1)
 CreateConVar("ba2_zom_dmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack by this amount.]],0)
-CreateConVar("ba2_zom_doordmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per door hit by this amount.]],0)
+CreateConVar("ba2_zom_propdmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack to props and doors by this amount.
+Does not stack with ba2_zom_dmgmult.]],0)
 CreateConVar("ba2_zom_infectionmult",1,FCVAR_ARCHIVE,[[Multiply zombie infection per attack by this amount.]],0)
 CreateConVar("ba2_zom_range",10000,FCVAR_ARCHIVE,[[Multiply zombie targeting range by this amount.
     High values may result in more lag when there are no valid targets.
     Set to 0 to turn them into the most miserable beings in existence.]],0)
 CreateConVar("ba2_zom_nonheadshotmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage received on non-headshots by this amount.]],0,1)
+CreateConVar("ba2_zom_limbdamagemult",.5,FCVAR_ARCHIVE,[[Multiply zombie damage received on limb shots by this amount.]],0,1)
 CreateConVar("ba2_zom_damagestun",1,FCVAR_ARCHIVE,[[If enabled, zombies will stagger if they take more than half their current health in damage.]])
 CreateConVar("ba2_zom_emergetime",8,FCVAR_ARCHIVE,[[After getting killed by an infectious source, entities will take this long to rise into a zombie.]])
 CreateConVar("ba2_zom_armdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have their arms broken.
@@ -85,8 +91,16 @@ CreateConVar("ba2_misc_deathdropmask",1,FCVAR_ARCHIVE,[[If enabled, players will
 CreateConVar("ba2_misc_deathdropfilter",1,FCVAR_ARCHIVE,[[If enabled, players will drop all of their gas mask filters on death.]])
 CreateConVar("ba2_misc_headshoteff",1,FCVAR_ARCHIVE,[[If enabled, zombies' heads have a chance to comically explode when they are killed by a headshot.]])
 CreateConVar("ba2_misc_addscore",1,FCVAR_ARCHIVE,[[If enabled, killing a zombie will award a frag to the player who killed them.]])
+CreateConVar("ba2_misc_isnpc",1,FCVAR_ARCHIVE,[[If enabled, other addons will consider zombies an NPC for the purpose of IsNPC() checks.
+Enabling this may correct interactions with some addons (for example, JMod), but can cause Lua errors in others. Enable at your own risk.]])
 
 concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
+
+concommand.Add("ba2_gasmask",BA2_ToggleGasmask,nil)
+concommand.Add("ba2_dgasmask",BA2_DropGasmask,nil)
+concommand.Add("ba2_dfilter",BA2_DropFilter,nil)
+concommand.Add("ba2_ufilter",BA2_UFilter,nil)
+concommand.Add("ba2_cfilter",BA2_CheckFilter,nil)
 
 
 -- Net messages
@@ -111,7 +125,7 @@ function BA2_InfectionTick(ent)
     dmg:SetDamageCustom(DMG_BIOVIRUS)
     dmg:SetAttacker(BA2_InfectionManager())
     dmg:SetInflictor(BA2_InfectionManager())
-
+    
     local lastArmor = nil
     if ent:IsPlayer() and ent:Armor() > 0 then
         lastArmor = ent:Armor()
@@ -285,28 +299,98 @@ function BA2_DestroyHS()
     end
 end
 
-function BA2_DropGasmask(p)
-    local mask = ents.Create("ba2_gasmask")
-    mask:SetPos(p:EyePos())
-    mask:SetAngles(p:EyeAngles())
-    mask.BA2_FilterPct = p:GetNWInt("BA2_GasmaskFilterPct",100)
-    mask:Spawn()
-    mask:Activate()
-    mask:GetPhysicsObject():ApplyForceCenter(p:GetForward() * 90)
 
-    BA2_GasmaskSound(p)
-    p:SetNWBool("BA2_GasmaskOn",false)
-    p:SetNWBool("BA2_GasmaskOwned",false)
+function BA2_ToggleGasmask(p)
+    if p:GetNWBool("BA2_GasmaskOwned",false) then
+        local bool = p:GetNWBool("BA2_GasmaskOn",false)
+
+        if bool then
+            p:EmitSound("npc/combine_soldier/zipline_hitground2.wav")
+            BA2_GasmaskSound(p)
+            
+        else
+            p:EmitSound("npc/combine_soldier/zipline_hitground1.wav")
+            BA2_GasmaskSound(p,p.BA2_MaskSoundName or "ba2/gasmask/mask_breathe_light.wav")
+        end
+
+        p:SetNWBool("BA2_GasmaskOn",not bool)
+        p:ViewPunch(Angle(10,0,0))
+    else
+        p:ChatPrint("You don't have a gas mask.")
+    end
+end
+
+function BA2_DropGasmask(p)
+    if !p:GetNWBool("BA2_GasmaskOwned",false) then
+        p:ChatPrint("You don't have a gas mask.")
+    else
+        p:EmitSound("npc/combine_soldier/zipline_hitground2.wav")
+        
+        local mask = ents.Create("ba2_gasmask")
+        mask:SetPos(p:EyePos())
+        mask:SetAngles(p:EyeAngles())
+        mask.BA2_FilterPct = p:GetNWInt("BA2_GasmaskFilterPct",100)
+        mask:Spawn()
+        mask:Activate()
+        mask:GetPhysicsObject():ApplyForceCenter(p:GetForward() * 90)
+
+        BA2_GasmaskSound(p)
+        p:SetNWBool("BA2_GasmaskOn",false)
+        p:SetNWBool("BA2_GasmaskOwned",false)
+    end
 end
 function BA2_DropFilter(p)
-    local filter = ents.Create("ba2_gasmask_filter")
-    filter:SetPos(p:EyePos() + p:GetForward() * 9)
-    filter:SetAngles(p:EyeAngles())
-    filter:Spawn()
-    filter:Activate()
-    filter:GetPhysicsObject():ApplyForceCenter(p:GetForward() * 900)
+    if p:GetNWInt("BA2_GasmaskFilters",0) == 0 then
+        p:ChatPrint("You don't have any reserve filters.")
+    else
+        local filter = ents.Create("ba2_gasmask_filter")
+        filter:SetPos(p:EyePos() + p:GetForward() * 9)
+        filter:SetAngles(p:EyeAngles())
+        filter:Spawn()
+        filter:Activate()
+        filter:GetPhysicsObject():ApplyForceCenter(p:GetForward() * 900)
 
-    p:SetNWInt("BA2_GasmaskFilters",p:GetNWInt("BA2_GasmaskFilters",1) - 1)
+        p:SetNWInt("BA2_GasmaskFilters",p:GetNWInt("BA2_GasmaskFilters",1) - 1)
+        p:EmitSound("physics/metal/weapon_footstep2.wav")
+    end
+end
+function BA2_CheckFilter(p)
+    if p:GetNWBool("BA2_GasmaskOwned",false) then
+        p:ChatPrint("Gas Mask: "..math.ceil(p:GetNWInt("BA2_GasmaskFilterPct",0)).."%")
+    else
+        p:ChatPrint("Gas Mask: N/A")
+    end
+
+    p:ChatPrint("Reserve Filters: "..p:GetNWInt("BA2_GasmaskFilters",0))
+end
+function BA2_UFilter(p)
+    if !p:GetNWBool("BA2_GasmaskOwned",false) then
+        p:ChatPrint("You don't have a gas mask.")
+    elseif !GetConVar("ba2_misc_maskfilters"):GetBool() then
+        p:ChatPrint("These filters are perpetual. Swapping them out won't be necessary.")
+    elseif p:GetNWBool("BA2_GasmaskOn",false) then
+        p:ChatPrint("You will need to take off your gas mask first. (!gasmask)")
+    elseif p:GetNWInt("BA2_GasmaskFilters",0) == 0 then
+        p:ChatPrint("You don't have any reserve filters.")
+    elseif p:GetNWInt("BA2_GasmaskFilterPct",0) == 100 then
+        p:ChatPrint("Your gas mask already has a fresh filter.")
+    else
+        p:SetNWInt("BA2_GasmaskFilterPct",100)
+        p:SetNWInt("BA2_GasmaskFilters",p:GetNWInt("BA2_GasmaskFilters",1) - 1)
+
+        local prop = ents.Create("ba2_gasmask_filter")
+        prop.BA2_Scenic = true
+
+        prop:SetPos(p:EyePos() + p:GetForward() * 18)
+        prop:Spawn()
+        prop:Activate()
+        prop:GetPhysicsObject():ApplyForceCenter(p:GetForward() * 900)
+
+        SafeRemoveEntityDelayed(prop,6)
+
+        p:EmitSound("physics/metal/weapon_footstep1.wav")
+        p:ViewPunch(Angle(10,0,0))
+    end
 end
 function BA2_GetActiveMask(p)
     if p:IsPlayer() then
@@ -349,14 +433,21 @@ hook.Add("OnEntityCreated","ba2_npcZomRelation",function(npc)
         for i,z in pairs(ents.FindByClass("nb_ba2_infected*")) do
             if npc.IsVJBaseSNPC then
                 timer.Simple(0,function()
-                    if IsValid(npc) then
+                    if IsValid(npc) and IsValid(z) and npc.VJ_AddCertainEntityAsEnemy ~= nil then
                         table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
                         table.insert(npc.CurrentPossibleEnemies,z)
                     end
                 end)
             end
-
             npc:AddEntityRelationship(z,D_HT,1)
+        end
+    elseif string.StartWith(npc:GetClass(),"nb_ba2_infected") then -- Vrej, why must I hardcode this ;-;
+        for i,n in pairs(ents.FindByClass("npc_*")) do
+            if n.IsVJBaseSNPC then
+                table.insert(n.VJ_AddCertainEntityAsEnemy,npc)
+                table.insert(n.CurrentPossibleEnemies,npc)
+                n:AddEntityRelationship(npc,D_HT,1)
+            end
         end
     end
 end)
@@ -425,7 +516,7 @@ end)
 
 
 hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent,dmg)
-    if GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
+    if inf ~= nil and GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
         or (IsValid(p) and p.BA2Infection > 0) 
         or inf:GetClass() == BA2_InfectionManager()) then
         BA2_InfectionDeath(p,inf,ent,dmg)
@@ -456,16 +547,18 @@ hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
     end
 
     if e:Health() <= 0 then return end
-    if (GetConVar("ba2_inf_romeromode"):GetBool() or dmg:GetInflictor() == BA2_InfectionManager() or dmg:GetDamageCustom() == DMG_BIOVIRUS) 
+    if (GetConVar("ba2_inf_romeromode"):GetBool() or dmg:GetInflictor() == BA2_InfectionManager() or dmg:GetDamageCustom() == DMG_BIOVIRUS
+        or (e.BA2Infection and e.BA2Infection > 0 and !GetConVar("ba2_inf_killtoraise"):GetBool())) 
         and (e:IsNPC() or e:IsPlayer()) and e:Health() <= dmg:GetDamage() then
         if e:IsPlayer() and GetConVar("ba2_inf_plyraise"):GetBool() then
             gamemode.Call("PlayerDeath",e,dmg:GetInflictor(),dmg:GetAttacker(),dmg)
             e:KillSilent()
             SafeRemoveEntity(e:GetRagdollEntity())
             return true
-        elseif e:IsNPC() and BA2_ConvertibleNpcs[e:GetClass()] and GetConVar("ba2_inf_npcraise"):GetBool() then
+        elseif e:IsNPC() and (e.IsVJBaseSNPC_Human or BA2_ConvertibleNpcs[e:GetClass()]) and GetConVar("ba2_inf_npcraise"):GetBool() then
             BA2_InfectionDeath(e,dmg:GetInflictor(),dmg:GetAttacker(),dmg)
             gamemode.Call("OnNPCKilled",e,dmg:GetAttacker(),dmg:GetInflictor(),dmg)
+            e:DropWeapon()
             e:Remove()
             return true
         end
@@ -477,83 +570,20 @@ hook.Add("PlayerSay","BA2_Chat",function(p,msg)
     if !p:Alive() then return end
 
     if msg == "!dgasmask" then
-        if !p:GetNWBool("BA2_GasmaskOwned",false) then
-            p:ChatPrint("You don't have a gas mask.")
-        else
-            p:EmitSound("npc/combine_soldier/zipline_hitground2.wav")
-            BA2_DropGasmask(p)
-        end
-
+        BA2_DropGasmask(p)
         return ""
     end
     if msg == "!gasmask" then
-        if p:GetNWBool("BA2_GasmaskOwned",false) then
-            local bool = p:GetNWBool("BA2_GasmaskOn",false)
-
-            if bool then
-                p:EmitSound("npc/combine_soldier/zipline_hitground2.wav")
-                BA2_GasmaskSound(p)
-                
-            else
-                p:EmitSound("npc/combine_soldier/zipline_hitground1.wav")
-                BA2_GasmaskSound(p,p.BA2_MaskSoundName or "ba2/gasmask/mask_breathe_light.wav")
-            end
-
-            p:SetNWBool("BA2_GasmaskOn",not bool)
-            p:ViewPunch(Angle(10,0,0))
-        else
-            p:ChatPrint("You don't have a gas mask.")
-        end
-
+        BA2_ToggleGasmask(p)
         return ""
     elseif msg == "!cfilter" then
-        if p:GetNWBool("BA2_GasmaskOwned",false) then
-            p:ChatPrint("Gas Mask: "..math.ceil(p:GetNWInt("BA2_GasmaskFilterPct",0)).."%")
-        else
-            p:ChatPrint("Gas Mask: N/A")
-        end
-
-        p:ChatPrint("Reserve Filters: "..p:GetNWInt("BA2_GasmaskFilters",0))
-
+        BA2_CheckFilter(p)
         return ""
     elseif msg == "!ufilter" then
-        if !p:GetNWBool("BA2_GasmaskOwned",false) then
-            p:ChatPrint("You don't have a gas mask.")
-        elseif !GetConVar("ba2_misc_maskfilters"):GetBool() then
-            p:ChatPrint("These filters are perpetual. Swapping them out won't be necessary.")
-        elseif p:GetNWBool("BA2_GasmaskOn",false) then
-            p:ChatPrint("You will need to take off your gas mask first. (!gasmask)")
-        elseif p:GetNWInt("BA2_GasmaskFilters",0) == 0 then
-            p:ChatPrint("You don't have any reserve filters.")
-        elseif p:GetNWInt("BA2_GasmaskFilterPct",0) == 100 then
-            p:ChatPrint("Your gas mask already has a fresh filter.")
-        else
-            p:SetNWInt("BA2_GasmaskFilterPct",100)
-            p:SetNWInt("BA2_GasmaskFilters",p:GetNWInt("BA2_GasmaskFilters",1) - 1)
-
-            local prop = ents.Create("ba2_gasmask_filter")
-            prop.BA2_Scenic = true
-
-            prop:SetPos(p:EyePos() + p:GetForward() * 18)
-            prop:Spawn()
-            prop:Activate()
-            prop:GetPhysicsObject():ApplyForceCenter(p:GetForward() * 900)
-
-            SafeRemoveEntityDelayed(prop,6)
-
-            p:EmitSound("physics/metal/weapon_footstep1.wav")
-            p:ViewPunch(Angle(10,0,0))
-        end
-
+        BA2_UFilter(p)
         return ""
     elseif msg == "!dfilter" then
-        if p:GetNWInt("BA2_GasmaskFilters",0) == 0 then
-            p:ChatPrint("You don't have any reserve filters.")
-        else
-            BA2_DropFilter(p)
-            p:EmitSound("physics/metal/weapon_footstep2.wav")
-        end
-
+        BA2_DropFilter(p)
         return ""
     end
 end)

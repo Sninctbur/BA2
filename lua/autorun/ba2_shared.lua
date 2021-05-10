@@ -112,7 +112,7 @@ BA2_ZombieTypes = {
 
 DMG_BIOVIRUS = 83598
 
-BA2_MODVERSION = "Debatably-Stable Release 0.2.1"
+BA2_MODVERSION = "Main Branch Release 1, Gamma Edition v1.0.0"
 
 -- Sounds
 sound.Add({
@@ -365,7 +365,7 @@ sound.Add({
 
 -- Other
 game.AddDecal("BA2_VirusBloodStain","decals/bloodstain_002")
-team.SetUp(83598,"NPCs",Color(250,46,46),false)
+team.SetUp(83598,"BA2_NPCs",Color(250,46,46),false)
 
 -- if ArcMedShots then
 --     ArcMedShots["ba2"] = {
