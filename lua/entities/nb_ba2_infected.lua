@@ -11,17 +11,6 @@ end
 
 BA2_CustomMetaTable = nil
 
-local function deepCopy(original)
-	local copy = {}
-	for k, v in pairs(original) do
-		if type(v) == "table" then
-			v = deepCopy(v)
-		end
-		copy[k] = v
-	end
-	return copy
-end
-
 -- Initialization
 function ENT:Initialize()
 	self:SetModel("models/ba2/infected/ba2_handfix.mdl")
@@ -36,7 +25,8 @@ function ENT:Initialize()
 	--self.InfBody = "models/Humans/Group01/male_02.mdl"
 
 	if SERVER then
-		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
+		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
+		self.HullType = HULL_HUMAN
 		local hp = GetConVar("ba2_zom_health"):GetInt()
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)
@@ -46,6 +36,7 @@ function ENT:Initialize()
 		-- self:SetMoveType(MOVETYPE_STEP)
 		-- self:SetCollisionGroup(COLLISION_GROUP_NPC)
 		self:PhysicsInitStatic(SOLID_BBOX)
+		self:SetSolidMask(MASK_SOLID)
 		self:SetFriction(0)
 		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
@@ -58,6 +49,15 @@ function ENT:Initialize()
 				end
 				npc:AddEntityRelationship(self,D_HT,1)
 			end
+		end
+
+		-- Credit to GammaWhiskey for this block of code
+		if GetConVar("ba2_misc_isnpc"):GetBool() then
+			if not BA2_CustomMetaTable then
+				BA2_CustomMetaTable = table.Copy(getmetatable(self))
+				BA2_CustomMetaTable.IsNPC = function() return true end
+			end
+			debug.setmetatable(self, BA2_CustomMetaTable)
 		end
 
 		timer.Simple(0,function()
@@ -111,11 +111,11 @@ function ENT:Initialize()
 		
 				if self.InfBodyGroups and #self.InfBodyGroups > 0 then
 					for i = 1,#self.InfBodyGroups do
-						self.InfBody:SetBodygroup(i-1,self.InfBodyGroups[i])
+						self.InfBody:SetBodygroup(i,self.InfBodyGroups[i])
 					end
 				else
 					for i = 1,#self.InfBody:GetBodyGroups() do
-						self.InfBody:SetBodygroup(i-1,math.random(0,self.InfBody:GetBodygroupCount(i-1)))
+						self.InfBody:SetBodygroup(i,math.random(0,self.InfBody:GetBodygroupCount(i-1)))
 					end
 				end
 				self.InfBody:SetSkin(self.InfSkin or math.random(0,self.InfBody:SkinCount()-1))
@@ -154,16 +154,6 @@ function ENT:Initialize()
 			end
 		end)
 	end
-	
-	-- getmetatable(self).IsNPC = function() return true end -- IsNPC() will return true, so other addons see us as NPCs and not just nextbots
-	if not BA2_CustomMetaTable then
-		BA2_CustomMetaTable = deepCopy(getmetatable(self))
-		BA2_CustomMetaTable.IsNPC = function() return true end
-	end
-
-	-- ...this works!
-	debug.setmetatable(self, BA2_CustomMetaTable)
-	--self:CallOnRemove("KillSounds",function() self:KillSounds() end)
 end
 
 -- Getters and setters
@@ -191,6 +181,16 @@ end
 function ENT:SetStunned(a)
 	self.BA2_Stunned = a
 end
+function ENT:GetHullType()
+	return self.HullType
+end
+function ENT:SetHullType(a)
+	self.HullType = a
+end
+-- function ENT:IsNPC()
+-- 	return GetConVar("ba2_zom_isnpc"):GetBool()
+-- end
+
 
 
 -- AI
@@ -223,6 +223,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 	while true do
 		if GetConVar("ai_disabled"):GetBool() then
+			self:SwitchActivity( ACT_IDLE )
 			-- n o t h i n g
 		elseif self:WaterLevel() == 3 then
 			--self:SetSequence("Choked_Barnacle")
@@ -580,7 +581,7 @@ function ENT:ZombieSmash(ent)
 			})
 
 			if tr.Hit or string.StartWith(class,"func_breakable") then
-				local propDmg = math.random(10,20) * GetConVar("ba2_zom_doordmgmult"):GetFloat()
+				local propDmg = math.random(10,20) * GetConVar("ba2_zom_propdmgmult"):GetFloat()
 				if self.BA2_LArmDown or self.BA2_RArmDown then
 					propDmg = propDmg * 0.5
 				end
@@ -772,6 +773,7 @@ end
 function ENT:BreakLLeg(dmginfo)
 	self.BA2_LLegDown = true
 	self.BA2_Crippled = true
+	self.HullType = HULL_TINY
 	self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",75)
 	
 	self:DeflateBones({
@@ -802,6 +804,7 @@ end
 function ENT:BreakRLeg(dmginfo)
 	self.BA2_RLegDown = true
 	self.BA2_Crippled = true
+	self.HullType = HULL_TINY
 	self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",75)
 	
 	self:DeflateBones({
@@ -856,13 +859,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * ArmBreakMultiplier then
 			self:BreakLArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	elseif trace.HitGroup == HITGROUP_RIGHTARM and self.BA2_RArmDown == nil then
 		self.BA2_RArmDamage = self.BA2_RArmDamage + dmginfo:GetDamage()
 		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * ArmBreakMultiplier then
 			self:BreakRArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	end
 
 	if trace.HitGroup == HITGROUP_LEFTLEG and self.BA2_LLegDown == nil then
@@ -870,13 +873,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() * LegBreakMultiplier then
 			self:BreakLLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	elseif trace.HitGroup == HITGROUP_RIGHTLEG and self.BA2_RLegDown == nil then
 		self.BA2_RLegDamage = self.BA2_RLegDamage + dmginfo:GetDamage()
 		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() * LegBreakMultiplier then
 			self:BreakRLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.5)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	end
 
 	if trace.HitGroup ~= HITGROUP_HEAD then
@@ -919,7 +922,10 @@ function ENT:OnInjured(dmginfo)
 end
 
 function ENT:OnKilled(dmginfo)
-	--gamemode.Call("OnNPCKilled",self,dmginfo:GetAttacker(),dmginfo:GetInflictor())
+	if engine.ActiveGamemode() == "horde" then
+		gamemode.Call("OnNPCKilled",self,dmginfo:GetAttacker(),dmginfo:GetInflictor()) -- Hardcode to fix horde
+	end
+
 	net.Start("BA2ZomDeathNotice")
 	net.WriteEntity(dmginfo:GetAttacker())
 	net.WriteEntity(dmginfo:GetInflictor())
@@ -1241,6 +1247,11 @@ function ENT:OnContact(ent)
 		if dmg:GetDamage() > 0 then
 			self:TakeDamageInfo(dmg)
 		end
+	elseif class == "prop_combine_ball" then
+		local dmg = DamageInfo()
+		dmg:SetDamageType(DMG_DISSOLVE)
+		dmg:SetDamage(self:Health())
+		self:TakeDamageInfo(dmg)
 	end
 end
 
@@ -1249,20 +1260,14 @@ function ENT:GetActiveWeapon()
 	return NULL
 end
 
--- If anyone wants a desposition, it's hatred
 function ENT:Disposition(ent)
 	return D_HT
 end
 
--- We hate everyone anyways, so anyone else calling this should just be discarded
-function ENT:AddEntityRelationship(target, disposition, priority) 
-
+function ENT:AddEntityRelationship(t,d,p)
 end
 
--- WELCOME TO STUB CITY
--- i'm not putting the entire npc api in here, i'll just eliminate issues as they pop up
--- these seem to be the functions other addons care about most so...
-
+-- Credit to GammaWhiskey for going through the trouble of adding these dummy functions
 function ENT:AddRelationship(relationstring)
 
 end

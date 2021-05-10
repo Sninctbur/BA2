@@ -30,18 +30,19 @@ function ENT:Initialize()
     end
 
     self.zoms = {}
-    if SERVER then self.navs = navmesh.GetAllNavAreas() end
+    if SERVER then
+        self.navs = navmesh.GetAllNavAreas() 
+        self:SpawnZoms(math.random(5,10))
+        timer.Create("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),0,function()
+            if IsValid(self) then
+                self:SpawnZoms(math.random(5,10))
+            end
+        end)
+    end
 
     if CLIENT then
         EmitSound("ba2/infected/horde.wav",self:GetPos(),-1)
     end
-
-    self:SpawnZoms(math.random(5,10))
-    timer.Create("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),0,function()
-        if IsValid(self) then
-            self:SpawnZoms(math.random(5,10))
-        end
-    end)
 end
 
 function ENT:OnRemove()
@@ -60,17 +61,21 @@ function ENT:OnRemove()
 end
 
 
+if SERVER then
+
 function ENT:SpawnZoms(amnt)
     timer.Adjust("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),nil,nil)
     local zomThreshold = GetConVar("ba2_hs_max"):GetInt()
-    local zomType = GetConVar("ba2_hs_appearance"):GetInt()
-    if zomType == 4 then
-        zomType = BA2_ZombieTypes[math.random(0,3)]
-    elseif zomType == 5 then
-        zomType = BA2_ZombieTypes[math.random(0,2)]
-    else
-        zomType = BA2_ZombieTypes[zomType]
-    end 
+    -- local zomType = GetConVar("ba2_hs_appearance"):GetInt()
+    -- if zomType == 4 then
+    --     zomType = BA2_ZombieTypes[math.random(0,3)]
+    -- elseif zomType == 5 then
+    --     zomType = BA2_ZombieTypes[math.random(0,2)]
+    -- else
+    --     zomType = BA2_ZombieTypes[zomType]
+    -- end
+
+    local zomTypes = BA2_GetValidAppearances()
 
     if SERVER then
         for i = 1,amnt do
@@ -83,7 +88,7 @@ function ENT:SpawnZoms(amnt)
                     
                     local spawnPos = navArea:GetCenter()
 
-                    local zom = ents.Create(zomType)
+                    local zom = ents.Create(zomTypes[math.random(1,#zomTypes)])
 
                     for i,ent in pairs(ents.FindInSphere(spawnPos,GetConVar("ba2_hs_saferadius"):GetInt())) do
                         if zom:IsValidEnemy(ent) then
@@ -118,4 +123,6 @@ function ENT:SpawnZoms(amnt)
             end)
         end
     end
+end
+
 end

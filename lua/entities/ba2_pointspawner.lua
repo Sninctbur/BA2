@@ -37,17 +37,10 @@ function ENT:OnRemove()
 end
 
 function SpawnZom(s) -- This is just a neutered Horde Spawner
-    local zomType = GetConVar("ba2_hs_appearance"):GetInt()
-    if zomType == 4 then
-        zomType = BA2_ZombieTypes[math.random(0,3)]
-    elseif zomType == 5 then
-        zomType = BA2_ZombieTypes[math.random(0,2)]
-    else
-        zomType = BA2_ZombieTypes[zomType]
-    end
+    local zomTypes = BA2_GetValidAppearances()
 
     if SERVER then
-        local zom = ents.Create(zomType)
+        local zom = ents.Create(zomTypes[math.random(1,#zomTypes)])
         zom:SetPos(s:GetPos())
         zom:SetAngles(s:GetAngles())
         zom.noRise = true

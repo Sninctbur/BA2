@@ -65,6 +65,9 @@ function BA2_NoNavmeshWarn()
         btn:SetPos(25,85)
         btn:SetText("Yes")
         btn.DoClick = function()
+            LocalPlayer():ChatPrint("A navmesh is now being generated. What happens next will vary depending on the map.")
+            LocalPlayer():ChatPrint("If you observe major lag, stand by until the map restarts. You can monitor the algorithm's progress in the console.")
+            LocalPlayer():ChatPrint("If not, automatic generation has failed and is incompatible with this map.")
             RunConsoleCommand("nav_generate")
             DFrame:Remove()
             ConfFrame:Remove()
@@ -113,7 +116,13 @@ net.Receive("BA2ZomDeathNotice",function()
         name = attacker:GetName()
         team = attacker:Team()
     else
-        name = "#"..attacker:GetClass()
+        if IsValid(attacker) then
+            name = "#"..attacker:GetClass()
+        elseif attacker:IsWorld() then
+            name = "#worldspawn"
+        else
+            name = " "
+        end
         team = 83598
     end
     if attacker == inflictor and (attacker:IsPlayer() or attacker:IsNPC()) then
@@ -217,7 +226,7 @@ hook.Add("HUDPaint","BA2_GasmaskHUD",function()
         end
 
         draw.DrawText("FILTER: "..filterPct.."%","DermaLarge",ScrW() * .01,ScrH() * .01,textColor)
-        draw.DrawText("RESERVE: "..LocalPlayer():GetNWInt("BA2_GasmaskFilters",0),"Trebuchet24",ScrW() * .01,ScrH() * .035,textColor)
+        draw.DrawText("RESERVE: "..LocalPlayer():GetNWInt("BA2_GasmaskFilters",0),"Trebuchet24",ScrW() * .01,ScrH() * .04,textColor)
     end
 end)
 hook.Add("DrawOverlay","BA2_CameraSmog",function()
@@ -232,6 +241,15 @@ end)
 
 -- Q-menu options
 local adminString = "You must be a server admin to modify these settings. You're still allowed to look, though.\n"
+
+function CreatePresets(vars)
+    local presets = vgui.Create("ControlPresets")
+    for i,v in pairs(vars) do
+        presets:AddConVar(v)
+    end
+
+    return presets
+end
 
 hook.Add("PopulateToolMenu","ba2_options",function(panel)
     -- ABOUT
@@ -252,9 +270,17 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         else
             panel:Help(BA2_MODVERSION.." (Workshop Edition)")
         end
-
+        
         local url = vgui.Create("DLabelURL")
-        url:SetText("GitHub Repository")
+        url:SetText("Workshop")
+        url:SetURL("https://steamcommunity.com/sharedfiles/filedetails/?id=2453712243")
+        panel:AddItem(url)
+        local url = vgui.Create("DLabelURL")
+        url:SetText("Wiki")
+        url:SetURL("https://github.com/Sninctbur/BA2/wiki")
+        panel:AddItem(url)
+        local url = vgui.Create("DLabelURL")
+        url:SetText("Source Code")
         url:SetURL("https://github.com/GammaWhiskey/BA2")
         panel:AddItem(url)
         local url = vgui.Create("DLabelURL")
@@ -283,9 +309,9 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
     end)
 
     -- COSMETIC
-    spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_cos","Cosmetic","","",function(panel)
+    spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_cos","Customs","","",function(panel)
         panel:Help("You can type \"find ba2_cos\" in the developer console for more information about these settings.")
-        panel:Help("These settings change the appearance of zombies. You can set Custom Infected models here.")
+        panel:Help("These settings change the appearance of Custom Infected.")
 
         -- panel:Help("Default Infected Color:")
         -- local mixer = vgui.Create("DColorMixer",panel)
@@ -333,7 +359,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
     end)
 
     -- HORDE SPAWNER
-    spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_hs","Horde Spawner","","",function(panel)
+    spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_hs","Spawners","","",function(panel)
         if(LocalPlayer():IsAdmin() == false) then
             panel:ControlHelp(adminString)
         end
@@ -346,13 +372,19 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Spawn Interval","ba2_hs_interval",0.1,30,1)
         panel:NumSlider("Safe Radius","ba2_hs_saferadius",0,10000,0)
 
-        local comboBox = panel:ComboBox("Zombie Appearance","ba2_hs_appearance")
-        comboBox:AddChoice("0. Citizens",0)
-        comboBox:AddChoice("1. Rebels",1)
-        comboBox:AddChoice("2. Combine",2)
-        comboBox:AddChoice("3. Custom",3)
-        comboBox:AddChoice("4. Any of the above",4)
-        comboBox:AddChoice("5. Any except Custom Infected",5)
+        -- local comboBox = panel:ComboBox("Zombie Appearance","ba2_hs_appearance")
+        -- comboBox:AddChoice("0. Citizens",0)
+        -- comboBox:AddChoice("1. Rebels",1)
+        -- comboBox:AddChoice("2. Combine",2)
+        -- comboBox:AddChoice("3. Custom",3)
+        -- comboBox:AddChoice("4. Any of the above",4)
+        -- comboBox:AddChoice("5. Any except Custom Infected",5)
+
+        panel:Help("Appearance:")
+        panel:CheckBox("Citizen","ba2_hs_appearance_0")
+        panel:CheckBox("Rebel","ba2_hs_appearance_1")
+        panel:CheckBox("Combine","ba2_hs_appearance_2")
+        panel:CheckBox("Custom","ba2_hs_appearance_3")
 
         panel:Button("Delete Active Horde Spawner","ba2_hs_delete")
     end)
@@ -398,6 +430,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Infection Multiplier","ba2_zom_infectionmult",0,10,2)
         panel:NumSlider("Detection Range","ba2_zom_range",0,50000,0)
         panel:NumSlider("Non-Headshot Damage Multiplier","ba2_zom_nonheadshotmult",0,1,2)
+        panel:NumSlider("Limb Damage Multiplier","ba2_zom_limbdamagemult",0,1,2)
         panel:NumSlider("Infected Raise Time","ba2_zom_emergetime",0,300,0)
         panel:NumSlider("Medic Vial Drop Chance","ba2_zom_medicdropchance",0,100,0)
         panel:NumSlider("Pursuit Speed","ba2_zom_pursuitspeed_ge",45,300,0)
@@ -408,8 +441,9 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:CheckBox("Attack Props","ba2_zom_breakobjects")
         panel:ControlHelp("The next options require Attack Props")
-        panel:CheckBox("Unfreeze/Unconstrain","ba2_zom_breakphys")
+        panel:CheckBox("Unfreeze/Unconstrain Props","ba2_zom_breakphys")
         panel:CheckBox("Break Down Doors","ba2_zom_breakdoors")
+        panel:NumSlider("Prop Damage Multiplier","ba2_zom_propdmgmult",0,10,2)
 
         panel:NumSlider("Door Respawn Time","ba2_zom_doorrespawn",0,300,0)
         panel:ControlHelp("Set to 0 to not respawn doors until map cleanup")
@@ -440,6 +474,11 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Air Waste View Shake","ba2_misc_airwasteshake")
         panel:CheckBox("No Navmesh Warning","ba2_misc_navmeshwarn")
         panel:CheckBox("Zombie Kill Credit","ba2_misc_addscore")
+
+        panel:Help("")
+
+        panel:CheckBox("Count Zombies as NPCs","ba2_misc_isnpc")
+        panel:ControlHelp("May cause Lua errors in other addons - enable at your own risk")
     end)
 end)
 
