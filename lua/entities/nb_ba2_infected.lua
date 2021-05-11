@@ -257,9 +257,9 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			elseif self:GetEnemy() ~= nil and !self:IsValidEnemy() then
 				self:SetEnemy(nil)
 				self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
-
-			elseif IsValid(self:SearchForCorpse()) then -- Move to corpse
-				local corpse = self:SearchForCorpse()
+			
+			local corpse = self:SearchForCorpse()
+			elseif IsValid(corpse) then -- Move to corpse
 				local corpsePos = corpse:GetPos()
 
 				if self:GetPos():Distance(corpsePos) <= 50 then
