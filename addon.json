@@ -1,5 +1,5 @@
 {
-	"title"		:	"Bio-Annihilation II",
+	"title"		:	"Bio-Annihilation II: Gamma Edition",
 	"type"		:	"npc",
 	"tags"		:	[ "realism","fun" ],
 	"ignore"	:
@@ -11,6 +11,6 @@
 		".gitignore",
 		".gitattributes",
 		"LICENSE.md",
-		"ReadMeOrIllReadYou.md"
+		"README.md"
 	]
 }
