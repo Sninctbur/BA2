@@ -447,7 +447,6 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:NumSlider("Door Respawn Time","ba2_zom_doorrespawn",0,300,0)
         panel:ControlHelp("Set to 0 to not respawn doors until map cleanup")
-        panel:NumSlider("Door Damage Multiplier","ba2_zom_doordmgmult",0,20,0)
     end)
 
     -- MISCELLANEOUS
