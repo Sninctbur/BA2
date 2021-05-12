@@ -115,10 +115,6 @@ end)
 function BA2_InfectionTick(ent)
     if ent.BA2Infection == nil or ent.BA2Infection == 0 then return end
 
-    if ent:IsPlayer() and ent:GetInfoNum("ba2_cl_infdmgeff",1) == 1 then
-        ent:ScreenFade(SCREENFADE.IN,Color(74,127,0,32),.75,0)
-    end
-
     local dmg = DamageInfo()
     dmg:SetDamage(math.random(3,5) * GetConVar("ba2_inf_dmgmult"):GetFloat())
     dmg:SetDamageType(DMG_DIRECT)
@@ -127,13 +123,29 @@ function BA2_InfectionTick(ent)
     dmg:SetInflictor(BA2_InfectionManager())
     
     local lastArmor = nil
+    local lastHealth = ent:Health()
     if ent:IsPlayer() and ent:Armor() > 0 then
         lastArmor = ent:Armor()
         ent:SetArmor(0)
     end
+    if ent.BA2Infection_FirstTick then
+        dmg:SetDamageType(DMG_NERVEGAS)
+    end
     ent:TakeDamageInfo(dmg)
     if lastArmor then
         ent:SetArmor(lastArmor)
+    end
+
+    if ent.BA2Infection_FirstTick then
+        if ent:Health() == lastHealth then
+            ent.BA2Infection = 0
+            return 
+        end
+        ent.BA2Infection_FirstTick = false  
+    end
+
+    if ent:IsPlayer() and ent:GetInfoNum("ba2_cl_infdmgeff",1) == 1 then
+        ent:ScreenFade(SCREENFADE.IN,Color(74,127,0,32),.75,0)
     end
 
     if IsValid(ent) or (ent:IsPlayer() and ent:Alive()) then
