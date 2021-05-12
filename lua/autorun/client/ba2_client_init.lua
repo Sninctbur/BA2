@@ -444,6 +444,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Unfreeze/Unconstrain Props","ba2_zom_breakphys")
         panel:CheckBox("Break Down Doors","ba2_zom_breakdoors")
         panel:NumSlider("Prop Damage Multiplier","ba2_zom_propdmgmult",0,10,2)
+        panel:CheckBox("Variable Prop Force","ba2_zom_variablepropforce")
 
         panel:NumSlider("Door Respawn Time","ba2_zom_doorrespawn",0,300,0)
         panel:ControlHelp("Set to 0 to not respawn doors until map cleanup")

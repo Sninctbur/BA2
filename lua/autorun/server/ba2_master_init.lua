@@ -79,6 +79,7 @@ CreateConVar("ba2_zom_breakphys",1,FCVAR_ARCHIVE,[[If enabled, zombies can unfre
 CreateConVar("ba2_zom_breakdoors",1,FCVAR_ARCHIVE,[[If enabled, zombies can break down standard doors.]])
 CreateConVar("ba2_zom_doorrespawn",30,FCVAR_ARCHIVE,[[The time in seconds it takes for a door to respawn after getting broken down.
     If this value is zero or less, then the door will not respawn until the map is cleaned up.]],0)
+CreateConVar("ba2_zom_variablepropforce",0,FCVAR_ARCHIVE,[[If enabled, zombies will be able to push over much heavier props.]])
 
 CreateConVar("ba2_misc_corpselife",10,FCVAR_ARCHIVE,[[The amount of time before a zombie's corpse is cleaned up.
     Set to -1 for infinite lifetime.]],-1

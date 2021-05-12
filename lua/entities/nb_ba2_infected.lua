@@ -653,7 +653,11 @@ function ENT:ZombieSmash(ent)
 				end
 				local phys = ent:GetPhysicsObject()
 				if IsValid(phys) then
-					phys:ApplyForceCenter(self:GetForward() * 5000)
+					if GetConVar("ba2_zom_variablepropforce"):GetBool() then
+						phys:ApplyForceCenter(self:GetForward() * phys:GetMass() * 170)
+					else
+						phys:ApplyForceCenter(self:GetForward() * 5000)
+					end
 					if GetConVar("ba2_zom_breakphys"):GetBool() then
 						phys:EnableMotion(true)
 					end
