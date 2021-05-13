@@ -369,7 +369,8 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Clean Up on Remove","ba2_hs_cleanup")
         panel:CheckBox("Clean Up Targetless Zombies","ba2_hs_notargetclean")
         panel:NumSlider("Maximum Zombies","ba2_hs_max",1,100,0)
-        panel:NumSlider("Spawn Interval","ba2_hs_interval",0.1,30,1)
+        panel:NumSlider("Horde Spawner Interval","ba2_hs_interval",0.1,30,1)
+        panel:NumSlider("Point Spawner Interval","ba2_ps_interval",0.1,30,1)
         panel:NumSlider("Safe Radius","ba2_hs_saferadius",0,10000,0)
 
         -- local comboBox = panel:ComboBox("Zombie Appearance","ba2_hs_appearance")
@@ -387,6 +388,20 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Custom","ba2_hs_appearance_3")
 
         panel:Button("Delete Active Horde Spawner","ba2_hs_delete")
+
+        panel:Help("THE FOLLOWING SETTINGS ARE EXPERIMENTAL. USE AT YOUR OWN RISK!")
+        
+        panel:CheckBox("Clean Up Stuck Zombies","ba2_hs_stuckclean")
+        panel:CheckBox("More Spawn Locations","ba2_hs_morespawnlocations")
+        panel:NumSlider("Interval Per Zombie","ba2_hs_intervalperzombie",0.1,30,1)
+
+        local combobox = panel:ComboBox("Proximity Spawning","ba2_hs_proximityspawns")
+        combobox:AddChoice("Disabled",0)
+        combobox:AddChoice("Area Branching w/ Radius Fallback", 1)
+        combobox:AddChoice("Area Branching", 2)
+        combobox:AddChoice("Radius", 3)
+
+        panel:NumSlider("Area Branching Attempts","ba2_hs_branchingattempts",1,10,0)
     end)
 
     -- INFECTION
@@ -448,6 +463,11 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:NumSlider("Door Respawn Time","ba2_zom_doorrespawn",0,300,0)
         panel:ControlHelp("Set to 0 to not respawn doors until map cleanup")
+    end)
+
+    -- AIR WASTE
+    spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_aw","Air Waste","","",function(panel)
+        panel:Button("Delete Active Air Waste", "ba2_aw_delete")
     end)
 
     -- MISCELLANEOUS

@@ -273,6 +273,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 
 			else -- Pacing
+				self:RemoveNoTarget() -- wont immediately remove, see function for more info
 				self:SwitchActivity( ACT_WALK )			-- Walk anmimation
 				self.loco:SetDesiredSpeed( 35 * self.BA2_SpeedMult )		-- Walk speed
 				self.loco:SetAcceleration(400)
@@ -450,6 +451,7 @@ end
 function ENT:HandleStuck()
 	--print(self:EntIndex(),"BA2: Handling stuck")
 	self.loco:ClearStuck()
+	self.BA2_PositionBeforeHandleStuck = self:GetPos()
 
 	if self:IsValidEnemy() then
 		self:PursuitSpeed()
@@ -479,9 +481,22 @@ function ENT:HandleStuck()
 	end
 end
 
--- function ENT:OnUnStuck()
--- 	print(self:EntIndex(),"BA2: Stuck handled!")
--- end
+function ENT:OnUnStuck()
+	-- self.BA2_RemoveIfStuck is only set to true in ba2_hordespawner as I create this, but more cases may pop up in the future where we want to do this
+	if self.BA2_RemoveIfStuck and self.BA2_PositionBeforeHandleStuck == self:GetPos() then
+		self:Remove()
+	end
+end
+
+function ENT:RemoveNoTarget()
+	if self.BA2_RemoveNoTarget then -- clone of timer logic in ba2_hordespawner, guess where this is set to true!
+		timer.Simple(6,function()
+			if IsValid(self) and (self:GetEnemy() == nil or !self:IsInWorld()) then
+				self:Remove()
+			end
+		end)
+	end
+end
 
 function ENT:ZombieAttack()
 	self:SetAttacking(true)

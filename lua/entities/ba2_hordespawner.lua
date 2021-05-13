@@ -30,7 +30,45 @@ function ENT:Initialize()
     end
 
     self.zoms = {}
+    self.numberOfZoms = 0
+    self.entList = {}
+
     if SERVER then
+        local function shouldListEntity(ent)
+            return ent:IsValid() 
+                and not string.StartWith(ent:GetClass(), "nb_ba2") 
+                and (ent:IsNPC() or ent:IsNextBot() or (ent:IsPlayer() and not GetConVar("ai_ignoreplayers"):GetBool()))
+        end
+    
+        for i, ent in pairs(ents.GetAll()) do
+            if shouldListEntity(ent) then
+                self.entList[ent:EntIndex()] = ent
+            end
+        end
+    
+        hook.Add("OnEntityCreated", "BA2_HordeSpawner_EntList", function(ent)
+            if shouldListEntity(ent) then
+                self.entList[ent:EntIndex()] = ent
+            end
+        end)
+        
+        cvars.AddChangeCallback("ai_ignoreplayers", function (convar, oldValue, newValue)
+            -- this seems like an excessive amount of comparison but it ensures that if someone changes ai_ignoreplayers from 1 to 2 it wont break stuff
+            -- extremely edge case? yes. better safe than sorry? also yes.
+            if tonumber(newValue) > 0 and tonumber(oldValue) == 0 then -- if ignore players is being turned on
+                for i, ent in pairs(self.entList) do
+                    if ent:IsPlayer() then
+                        self.entList[i] = nil  
+                    end
+                end
+            elseif tonumber(oldValue) > 0 and tonumber(newValue) == 0 then -- if ignore players is being turned off
+                for i, ent in pairs(player.GetAll()) do
+                    self.entList[ent:EntIndex()] = ent
+                end
+            end
+    
+        end, "BA2_HordeSpawner_IgnorePlayers")
+
         self.navs = navmesh.GetAllNavAreas() 
         self:SpawnZoms(math.random(5,10))
         timer.Create("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),0,function()
@@ -47,6 +85,9 @@ end
 
 function ENT:OnRemove()
     if SERVER then
+        hook.Remove("OnEntityCreated", "BA2_HordeSpawner_EntList")
+        cvars.RemoveChangeCallback("ai_ignoreplayers", "BA2_HordeSpawner_IgnorePlayers")
+
         if #ents.FindByClass(self.ClassName) == 0 then -- I am the one and only *guitar riff*
             timer.Remove("BA2_HordeSpawner")
         end
@@ -63,6 +104,71 @@ end
 
 if SERVER then
 
+local function radiusAlgorithm(entPosition, safeRadius)
+    local randomAngle = math.random() * math.pi * 2
+    local randomX = math.cos(randomAngle) * (safeRadius + math.Rand(0, 0.1 * safeRadius))
+    local randomY = math.sin(randomAngle) * (safeRadius + math.Rand(0, 0.1 * safeRadius))
+
+    local areaNearRandomEnt = navmesh.GetNearestNavArea(Vector(randomX, randomY, 0) + entPosition)
+    
+    if areaNearRandomEnt and areaNearRandomEnt:IsValid() and not areaNearRandomEnt:IsUnderwater() then
+        return areaNearRandomEnt
+    else
+        return 
+    end
+end
+
+local function areaBranchingAlgorithm(entPosition, safeRadius)
+    local areaNearRandomEnt = navmesh.GetNearestNavArea(entPosition)
+    local attemptsToMake = GetConVar("ba2_hs_branchingattempts"):GetInt()
+    local attemptsMade = 0
+
+    while attemptsMade < attemptsToMake do
+        local searchDirectionNorthSouth
+        if math.random(0,1) == 0 then
+            searchDirectionNorthSouth = 0 -- NORTH
+        else
+            searchDirectionNorthSouth = 2 -- SOUTH
+        end
+
+        local searchDirectionEastWest
+        if math.random(0,1) == 0 then
+            searchDirectionEastWest = 1 -- EAST
+        else
+            searchDirectionEastWest = 3 -- WEST
+        end
+
+        local randomSearchDirection
+        if math.random(0,1) == 0 then
+            randomSearchDirection = searchDirectionNorthSouth
+        else
+            randomSearchDirection = searchDirectionEastWest
+        end
+
+        local selectedArea = areaNearRandomEnt:GetRandomAdjacentAreaAtSide(randomSearchDirection)
+
+        while selectedArea:IsValid() and (
+            selectedArea:GetCenter():DistToSqr(entPosition) < GetConVar("ba2_hs_saferadius"):GetInt() ^ 2 
+            or selectedArea:IsUnderwater()) do
+            
+            if math.random(0,1) == 0 then
+                randomSearchDirection = searchDirectionNorthSouth
+            else
+                randomSearchDirection = searchDirectionEastWest
+            end
+            selectedArea = selectedArea:GetRandomAdjacentAreaAtSide(randomSearchDirection)
+        end
+
+        if selectedArea:IsValid() then
+            return selectedArea
+        else
+            attemptsMade = attemptsMade + 1 
+        end
+    end
+
+    return 
+end
+
 function ENT:SpawnZoms(amnt)
     timer.Adjust("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),nil,nil)
     local zomThreshold = GetConVar("ba2_hs_max"):GetInt()
@@ -76,17 +182,78 @@ function ENT:SpawnZoms(amnt)
     -- end
 
     local zomTypes = BA2_GetValidAppearances()
+    local intervalPerZombie = GetConVar("ba2_hs_intervalperzombie"):GetFloat()
 
     if SERVER then
         for i = 1,amnt do
-            timer.Simple(i * .1,function() -- O P T I M I Z E D
-                if IsValid(self) and self.zoms ~= nil and #self.zoms < zomThreshold then
-                    local navArea = self.navs[math.random(1,#self.navs)]
-                    while navArea:IsUnderwater() do
+            timer.Simple(i * intervalPerZombie,function() -- O P T I M I Z E D
+                if IsValid(self) and self.zoms ~= nil and self.numberOfZoms < zomThreshold then
+                    local navArea
+                    
+                    if GetConVar("ba2_hs_proximityspawns"):GetBool() then   
+                        local randomEnt = table.Random(self.entList) -- yes, i'm well aware that using math.random is preferred, but this table isn't sequential
+                        
+                        if randomEnt and randomEnt:IsValid() then
+                            local randomEntPosition = randomEnt:GetPos()
+                            
+                            local safeRadius = GetConVar("ba2_hs_saferadius"):GetInt()
+    
+                            local algorithmSelection = GetConVar("ba2_hs_proximityspawns"):GetInt()
+                            if algorithmSelection == 3 then -- radius only
+                                navArea = radiusAlgorithm(randomEntPosition, safeRadius)
+                                if not navArea then return end
+                            elseif algorithmSelection == 2 then -- branching only
+                                navArea = areaBranchingAlgorithm(randomEntPosition, safeRadius)
+                                if not navArea then return end
+                            else -- branching with radius fallback
+                                navArea = areaBranchingAlgorithm(randomEntPosition, safeRadius)
+                                if not navArea then
+                                    navArea = radiusAlgorithm(randomEntPosition, safeRadius)
+                                    if not navArea then return end
+                                end
+                            end
+                        else
+                            return
+                        end
+                    else
                         navArea = self.navs[math.random(1,#self.navs)]
+                        while navArea:IsUnderwater() do
+                            navArea = self.navs[math.random(1,#self.navs)]
+                        end
                     end
+
+                    -- while navArea:IsUnderwater() do
+                    --     navArea = self.navs[math.random(1,#self.navs)]
+                    -- end
                     
                     local spawnPos = navArea:GetCenter()
+
+                    if GetConVar("ba2_hs_morespawnlocations"):GetBool() then
+                        local extent = navArea:GetExtentInfo()
+                        
+                        if extent["SizeX"] > 128 and extent["SizeY"] > 128 then -- is our selected navmesh area pretty big?
+                            local randomSpot = math.random(0,8)
+                            if randomSpot < 4 then
+                                -- let's spawn a zombie at a corner!
+                                -- instead of spawning directly at the corner, we move the zombie 20% closer to the center before spawning it
+                                local cornerPos = navArea:GetCorner(randomSpot)
+                                spawnPos = 0.8 * (cornerPos - spawnPos) + spawnPos
+                            elseif randomSpot < 8 then
+                                -- let's spawn a zombie inbetween two corners!
+                                local firstCorner = randomSpot - 4
+                                local secondCorner = firstCorner + 1
+                                if secondCorner == 4 then secondCorner = 0 end
+    
+                                local firstCornerPos = navArea:GetCorner(firstCorner)
+                                local secondCornerPos = navArea:GetCorner(secondCorner)
+                                
+                                -- first, we get the midpoint
+                                local midpoint = (firstCornerPos + secondCornerPos) / 2
+                                -- now same as before
+                                spawnPos = 0.8 * (midpoint - spawnPos) + spawnPos
+                            end
+                        end 
+                    end
 
                     local zom = ents.Create(zomTypes[math.random(1,#zomTypes)])
 
@@ -100,14 +267,21 @@ function ENT:SpawnZoms(amnt)
                     zom:SetPos(spawnPos)
                     zom.noRise = true
                     zom.SearchRadius = math.huge -- Can't have a horde if they don't actually chase people
+                    if GetConVar("ba2_hs_stuckclean"):GetBool() then
+                        zom.BA2_RemoveIfStuck = true 
+                    end 
                     zom:Spawn()
                     zom:Activate()
-                    
-                    table.insert(self.zoms,zom)
+
+                    self.zoms[zom:EntIndex()] = zom
+                    self.numberOfZoms = self.numberOfZoms + 1
                     zom:CallOnRemove(zom:EntIndex().."-ZomRemove",function()
                         timer.Simple(0,function()
+                            if self.numberOfZoms ~= nil then
+                                self.numberOfZoms = self.numberOfZoms - 1
+                            end
                             if self.zoms ~= nil then
-                                table.RemoveByValue(self.zoms,zom)
+                                self.zoms[zom:EntIndex()] = nil 
                             end
                         end)
                     end)
@@ -116,6 +290,8 @@ function ENT:SpawnZoms(amnt)
                         timer.Simple(6,function()
                             if IsValid(zom) and (zom:GetEnemy() == nil or !zom:IsInWorld()) then
                                 zom:Remove()
+                            elseif IsValid(zom) then
+                                zom.BA2_RemoveNoTarget = true 
                             end
                         end)
                     end

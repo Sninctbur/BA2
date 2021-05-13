@@ -44,11 +44,14 @@ function SpawnZom(s) -- This is just a neutered Horde Spawner
         zom:SetPos(s:GetPos())
         zom:SetAngles(s:GetAngles())
         zom.noRise = true
+        if GetConVar("ba2_hs_stuckclean"):GetBool() then
+            zom.BA2_RemoveIfStuck = true 
+        end
         zom:Spawn()
         zom:Activate()
 
         zom:CallOnRemove("BA2_PS_Respawn",function()
-            timer.Simple(GetConVar("ba2_hs_interval"):GetFloat(),function()
+            timer.Simple(GetConVar("ba2_ps_interval"):GetFloat(),function()
                 if IsValid(s) then
                     s.zom = SpawnZom(s)
                 end

@@ -30,7 +30,20 @@ CreateConVar("ba2_hs_appearance_2",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will 
 CreateConVar("ba2_hs_appearance_3",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Custom Infected.]])
 CreateConVar("ba2_hs_cleanup",1,FCVAR_ARCHIVE,[[If enabled, Spawners will also remove all of the zombies it created when it gets deleted.]])
 concommand.Add("ba2_hs_delete",BA2_DestroyHS,nil,"Destroys the active Horde Spawner, if it exists.")
+concommand.Add("ba2_aw_delete",BA2_DestroyAW,nil,"Destroys the active Air Waste, if it exists.")
 CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually replace zombies who do not find a target within 6 sceonds of spawning.]])
+CreateConVar("ba2_hs_stuckclean",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will delete and eventually replace stuck zombies.]])
+CreateConVar("ba2_hs_intervalperzombie",0.1,FCVAR_ARCHIVE,[[!EXPERIMENTAL! The Horde Spawner will wait this long before spawning each new zombie in a group.]],0.1)
+CreateConVar("ba2_hs_morespawnlocations",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will use more locations for zombies.]])
+CreateConVar("ba2_hs_proximityspawns",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will use new proximity spawning behavior.
+    0: Disabled
+    1: Area Branching w/ Radius Fallback (default)
+    2: Area Branching
+    3: Radius
+]])
+CreateConVar("ba2_hs_branchingattempts",1,FCVAR_ARCHIVE,[[!EXPERIMENTAL! How many attempts the area branching algorithm will make before failing.]],1)
+CreateConVar("ba2_ps_interval",1,FCVAR_ARCHIVE,[[The Point Spawner will wait this long before spawning a new group of zombies.
+The lower this is, the faster zombies will spawn.]],0.1)
 
 CreateConVar("ba2_inf_contagionmult",1,FCVAR_ARCHIVE,[[Mutliply the distance the Bio-Virus can spread to others by this amount.
     Set to 0 to disable contagion.]],0)
@@ -260,7 +273,9 @@ function BA2_ZombieGrab(zom,ent)
         ent:ViewPunch(Angle(10,0,0))
     else
         ent.GrabPos = ent:GetPos()
-        ent:StopMoving()
+        if ent.StopMoving then
+            ent:StopMoving()
+        end
     end
 
     timer.Create(zom:EntIndex().."-grab",0,0,function()
@@ -312,6 +327,15 @@ function BA2_DestroyHS()
     end
 end
 
+function BA2_DestroyAW()
+    local aw = ents.FindByClass("ba2_airwaste")
+    if #aw >= 1 then
+        aw[1]:Remove()
+        print("BA2: Air Waste removed by console")
+    else
+        print("BA2: No Air Waste found!")
+    end
+end
 
 function BA2_ToggleGasmask(p)
     if p:GetNWBool("BA2_GasmaskOwned",false) then
