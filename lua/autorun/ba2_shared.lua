@@ -362,6 +362,40 @@ sound.Add({
     }
 })
 
+sound.Add({
+    name = "ba2_cureuse",
+    channel = CHAN_ITEM,
+    volume = 0.9,
+    level = 75,
+    pitch = 100,
+    sound = {
+        "ba2/cure_spray/cure_spray.wav"
+    }
+})
+sound.Add({
+	name = "ba2_curephys_soft",
+	channel = CHAN_ITEM,
+	volume = 0.8,
+	level = 65,
+	pitch = { 90, 110 },
+	sound = { 
+	    "physics/metal/soda_can_impact_soft1.wav",
+	    "physics/metal/soda_can_impact_soft2.wav",
+	    "physics/metal/soda_can_impact_soft3.wav"
+	}
+})
+sound.Add({
+	name = "ba2_curephys_hard",
+	channel = CHAN_ITEM,
+	volume = 0.8,
+	level = 65,
+	pitch = { 90, 110 },
+	sound = { 
+        "physics/metal/soda_can_impact_hard1.wav",
+        "physics/metal/soda_can_impact_hard2.wav",
+        "physics/metal/soda_can_impact_hard3.wav"
+    }
+})
 
 -- Other
 game.AddDecal("BA2_VirusBloodStain","decals/bloodstain_002")
