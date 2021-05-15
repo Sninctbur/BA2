@@ -33,15 +33,8 @@ concommand.Add("ba2_hs_delete",BA2_DestroyHS,nil,"Destroys the active Horde Spaw
 concommand.Add("ba2_aw_delete",BA2_DestroyAW,nil,"Destroys the active Air Waste, if it exists.")
 CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually replace zombies who do not find a target within 6 sceonds of spawning.]])
 CreateConVar("ba2_hs_stuckclean",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will delete and eventually replace stuck zombies.]])
-CreateConVar("ba2_hs_intervalperzombie",0.1,FCVAR_ARCHIVE,[[!EXPERIMENTAL! The Horde Spawner will wait this long before spawning each new zombie in a group.]],0.1)
-CreateConVar("ba2_hs_morespawnlocations",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will use more locations for zombies.]])
-CreateConVar("ba2_hs_proximityspawns",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will use new proximity spawning behavior.
-    0: Disabled
-    1: Area Branching w/ Radius Fallback (default)
-    2: Area Branching
-    3: Radius
-]])
-CreateConVar("ba2_hs_branchingattempts",1,FCVAR_ARCHIVE,[[!EXPERIMENTAL! How many attempts the area branching algorithm will make before failing.]],1)
+CreateConVar("ba2_hs_morespawnlocations",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will use more locations to spawn zombies.]])
+CreateConVar("ba2_hs_proximityspawns",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will spawn zombies close to targets instead of all over the map.]])
 CreateConVar("ba2_ps_interval",1,FCVAR_ARCHIVE,[[The Point Spawner will wait this long before spawning a new group of zombies.
 The lower this is, the faster zombies will spawn.]],0.1)
 
@@ -93,6 +86,10 @@ CreateConVar("ba2_zom_breakdoors",1,FCVAR_ARCHIVE,[[If enabled, zombies can brea
 CreateConVar("ba2_zom_doorrespawn",30,FCVAR_ARCHIVE,[[The time in seconds it takes for a door to respawn after getting broken down.
     If this value is zero or less, then the door will not respawn until the map is cleaned up.]],0)
 CreateConVar("ba2_zom_variablepropforce",0,FCVAR_ARCHIVE,[[If enabled, zombies will be able to push over much heavier props.]])
+CreateConVar("ba2_zom_ptwander",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, zombies will use path-tracing checks when wandering.
+This can significantly increase performance when zombies are in confined areas.]])
+CreateConVar("ba2_zom_handlebadpaths",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, bad paths will be handled quickly instead of being left to lag the game.
+This can significantly increase performance when zombies are in confined areas.]])
 
 CreateConVar("ba2_misc_corpselife",10,FCVAR_ARCHIVE,[[The amount of time before a zombie's corpse is cleaned up.
     Set to -1 for infinite lifetime.]],-1

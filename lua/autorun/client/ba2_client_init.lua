@@ -390,18 +390,11 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:Button("Delete Active Horde Spawner","ba2_hs_delete")
 
         panel:Help("THE FOLLOWING SETTINGS ARE EXPERIMENTAL. USE AT YOUR OWN RISK!")
+        panel:Help("(That being said, they might make the horde spawner better!)")
         
         panel:CheckBox("Clean Up Stuck Zombies","ba2_hs_stuckclean")
         panel:CheckBox("More Spawn Locations","ba2_hs_morespawnlocations")
-        panel:NumSlider("Interval Per Zombie","ba2_hs_intervalperzombie",0.1,30,1)
-
-        local combobox = panel:ComboBox("Proximity Spawning","ba2_hs_proximityspawns")
-        combobox:AddChoice("Disabled",0)
-        combobox:AddChoice("Area Branching w/ Radius Fallback", 1)
-        combobox:AddChoice("Area Branching", 2)
-        combobox:AddChoice("Radius", 3)
-
-        panel:NumSlider("Area Branching Attempts","ba2_hs_branchingattempts",1,10,0)
+        panel:CheckBox("Proximity Spawning","ba2_hs_proximityspawns")
     end)
 
     -- INFECTION
@@ -463,6 +456,12 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:NumSlider("Door Respawn Time","ba2_zom_doorrespawn",0,300,0)
         panel:ControlHelp("Set to 0 to not respawn doors until map cleanup")
+
+        panel:Help("THE FOLLOWING SETTINGS ARE EXPERIMENTAL. USE AT YOUR OWN RISK!")
+        panel:Help("(They also might help with performance issues, though!)")
+
+        panel:CheckBox("Pathtraced Wandering","ba2_zom_ptwander")
+        panel:CheckBox("Handle Bad Paths","ba2_zom_handlebadpaths")
     end)
 
     -- AIR WASTE

@@ -34,22 +34,29 @@ function ENT:Initialize()
     self.entList = {}
 
     if SERVER then
-        local function shouldListEntity(ent)
-            return ent:IsValid() 
+        local function attemptAddEntityToList(ent)
+            if ent:IsValid() 
                 and not string.StartWith(ent:GetClass(), "nb_ba2") 
-                and (ent:IsNPC() or ent:IsNextBot() or (ent:IsPlayer() and not GetConVar("ai_ignoreplayers"):GetBool()))
+                and (ent:IsNPC() or ent:IsNextBot() or (ent:IsPlayer() and not GetConVar("ai_ignoreplayers"):GetBool())) 
+            then
+                local entIndex = ent:EntIndex()
+                self.entList[entIndex] = ent
+                ent:CallOnRemove(entIndex.."-HordeSpawnerList",function()
+                    timer.Simple(0,function()
+                        if self.entList then
+                            self.entList[entIndex] = nil 
+                        end
+                    end)
+                end)
+            end
         end
     
         for i, ent in pairs(ents.GetAll()) do
-            if shouldListEntity(ent) then
-                self.entList[ent:EntIndex()] = ent
-            end
+            attemptAddEntityToList(ent)
         end
     
         hook.Add("OnEntityCreated", "BA2_HordeSpawner_EntList", function(ent)
-            if shouldListEntity(ent) then
-                self.entList[ent:EntIndex()] = ent
-            end
+            attemptAddEntityToList(ent)
         end)
         
         cvars.AddChangeCallback("ai_ignoreplayers", function (convar, oldValue, newValue)
@@ -104,71 +111,6 @@ end
 
 if SERVER then
 
-local function radiusAlgorithm(entPosition, safeRadius)
-    local randomAngle = math.random() * math.pi * 2
-    local randomX = math.cos(randomAngle) * (safeRadius + math.Rand(0, 0.1 * safeRadius))
-    local randomY = math.sin(randomAngle) * (safeRadius + math.Rand(0, 0.1 * safeRadius))
-
-    local areaNearRandomEnt = navmesh.GetNearestNavArea(Vector(randomX, randomY, 0) + entPosition)
-    
-    if areaNearRandomEnt and areaNearRandomEnt:IsValid() and not areaNearRandomEnt:IsUnderwater() then
-        return areaNearRandomEnt
-    else
-        return 
-    end
-end
-
-local function areaBranchingAlgorithm(entPosition, safeRadius)
-    local areaNearRandomEnt = navmesh.GetNearestNavArea(entPosition)
-    local attemptsToMake = GetConVar("ba2_hs_branchingattempts"):GetInt()
-    local attemptsMade = 0
-
-    while attemptsMade < attemptsToMake do
-        local searchDirectionNorthSouth
-        if math.random(0,1) == 0 then
-            searchDirectionNorthSouth = 0 -- NORTH
-        else
-            searchDirectionNorthSouth = 2 -- SOUTH
-        end
-
-        local searchDirectionEastWest
-        if math.random(0,1) == 0 then
-            searchDirectionEastWest = 1 -- EAST
-        else
-            searchDirectionEastWest = 3 -- WEST
-        end
-
-        local randomSearchDirection
-        if math.random(0,1) == 0 then
-            randomSearchDirection = searchDirectionNorthSouth
-        else
-            randomSearchDirection = searchDirectionEastWest
-        end
-
-        local selectedArea = areaNearRandomEnt:GetRandomAdjacentAreaAtSide(randomSearchDirection)
-
-        while selectedArea:IsValid() and (
-            selectedArea:GetCenter():DistToSqr(entPosition) < GetConVar("ba2_hs_saferadius"):GetInt() ^ 2 
-            or selectedArea:IsUnderwater()) do
-            
-            if math.random(0,1) == 0 then
-                randomSearchDirection = searchDirectionNorthSouth
-            else
-                randomSearchDirection = searchDirectionEastWest
-            end
-            selectedArea = selectedArea:GetRandomAdjacentAreaAtSide(randomSearchDirection)
-        end
-
-        if selectedArea:IsValid() then
-            return selectedArea
-        else
-            attemptsMade = attemptsMade + 1 
-        end
-    end
-
-    return 
-end
-
 function ENT:SpawnZoms(amnt)
     timer.Adjust("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),nil,nil)
     local zomThreshold = GetConVar("ba2_hs_max"):GetInt()
@@ -182,11 +124,10 @@ function ENT:SpawnZoms(amnt)
     -- end
 
     local zomTypes = BA2_GetValidAppearances()
-    local intervalPerZombie = GetConVar("ba2_hs_intervalperzombie"):GetFloat()
 
     if SERVER then
         for i = 1,amnt do
-            timer.Simple(i * intervalPerZombie,function() -- O P T I M I Z E D
+            timer.Simple(i * 0.1,function() -- O P T I M I Z E D
                 if IsValid(self) and self.zoms ~= nil and self.numberOfZoms < zomThreshold then
                     local navArea
                     
@@ -198,19 +139,16 @@ function ENT:SpawnZoms(amnt)
                             
                             local safeRadius = GetConVar("ba2_hs_saferadius"):GetInt()
     
-                            local algorithmSelection = GetConVar("ba2_hs_proximityspawns"):GetInt()
-                            if algorithmSelection == 3 then -- radius only
-                                navArea = radiusAlgorithm(randomEntPosition, safeRadius)
-                                if not navArea then return end
-                            elseif algorithmSelection == 2 then -- branching only
-                                navArea = areaBranchingAlgorithm(randomEntPosition, safeRadius)
-                                if not navArea then return end
-                            else -- branching with radius fallback
-                                navArea = areaBranchingAlgorithm(randomEntPosition, safeRadius)
-                                if not navArea then
-                                    navArea = radiusAlgorithm(randomEntPosition, safeRadius)
-                                    if not navArea then return end
-                                end
+                            local randomAngle = math.random() * math.pi * 2
+                            local randomX = math.cos(randomAngle) * (safeRadius + math.Rand(0, 0.1 * safeRadius))
+                            local randomY = math.sin(randomAngle) * (safeRadius + math.Rand(0, 0.1 * safeRadius))
+
+                            local areaNearRandomEnt = navmesh.GetNearestNavArea(Vector(randomX, randomY, 0) + randomEntPosition)
+                            
+                            if areaNearRandomEnt and areaNearRandomEnt:IsValid() and not areaNearRandomEnt:IsUnderwater() then
+                                navArea = areaNearRandomEnt
+                            else
+                                return 
                             end
                         else
                             return

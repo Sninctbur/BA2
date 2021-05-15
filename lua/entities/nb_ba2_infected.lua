@@ -256,7 +256,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 				self.NavTarget = self:GetEnemy():GetPos()
 			elseif self:GetEnemy() ~= nil and !self:IsValidEnemy() then
 				self:SetEnemy(nil)
-				self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
+				self.NavTarget = self:FindRandomNavTarget()
 			
 			local corpse = self:SearchForCorpse()
 			elseif IsValid(corpse) then -- Move to corpse
@@ -282,12 +282,14 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					self:SwitchActivity( ACT_IDLE )
 					coroutine.wait(math.Rand(25,200) / 100)
 
-					self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
+					self.NavTarget = self:FindRandomNavTarget()
 					pathComplete = nil
 				end
 			end
 
 			if self.NavTarget ~= nil then -- ChaseEnemy code robbed shamelessly from the wiki, because fuck reinventing the wheel
+				local handleBadPaths = GetConVar("ba2_zom_handlebadpaths"):GetBool()
+
 				--self.loco:FaceTowards(self.NavTarget)
 				if path:GetAge() > .5 then
 					pathComplete = path:Compute( self, self.NavTarget )	-- Compute the path towards the enemies position
@@ -298,6 +300,9 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					if ( path:GetAge() > 0.5 ) then					-- Since we are following the player we have to constantly remake the path
 						pathComplete = path:Compute(self, self.NavTarget) -- Compute the path towards the enemy's position again
 					end							-- This function moves the bot along the path
+					if handleBadPaths then
+						path:Update( self )
+					end
 				elseif self:IsValidEnemy() then
 					--print(self:EntIndex(),"BA2: Pathfinding failed")
 					--self:HandleStuck()
@@ -311,9 +316,14 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 						self:SetEnemy(self:SearchForEnemy()) -- Pick a new enemy if we can't get to the current one
 						self:HandleStuck()
 					end
+				elseif handleBadPaths then
+					self:HandleStuck()
+					debugoverlay.Cross(self.NavTarget, 20, 3, Color(255,0,0))
 				end
 
-				path:Update( self )	
+				if not handleBadPaths then
+					path:Update( self )	
+				end
 
 				if self.loco:IsStuck() then
 					--print(self:EntIndex(),"BA2: Pathfinding stuck")
@@ -353,10 +363,28 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			end
 		end
 
+		if self.NavTarget then
+			debugoverlay.Cross(self.NavTarget, 3, 1, Color(0,255,0))
+		end
 		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
 		coroutine.yield()
 	end
 end
+
+function ENT:FindRandomNavTarget()
+	if GetConVar("ba2_zom_ptwander"):GetBool() then
+		local tr = util.TraceLine( {
+			start = self:GetPos(),
+			endpos = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200,
+			filter = function( ent ) if ( ent:GetClass() == "prop_physics" ) then return true end end
+		} )
+	
+		return tr.HitPos
+	else
+		return self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
+	end
+end
+
 function ENT:PursuitSpeed()
 	local PursuitConfig = GetConVar("ba2_zom_pursuitspeed_ge"):GetInt()
 	if self.BA2_Crippled then
@@ -466,7 +494,7 @@ function ENT:HandleStuck()
 	-- else
 	-- 	self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
 	-- end -- Jump behavior is temporarily disabled on account of being garbo
-	self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200 
+	self.NavTarget = self:FindRandomNavTarget()
 	--self:MoveToPos(self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200,{maxage = 3}) -- Unoptimized, apparently
 	for i = 1,125 do
 		self.loco:FaceTowards(self.NavTarget)
