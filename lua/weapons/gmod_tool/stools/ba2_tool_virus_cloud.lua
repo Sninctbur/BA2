@@ -2,11 +2,13 @@ TOOL.Category = "Bio-Annihilation II"
 TOOL.Name = "#tool.ba2_tool_virus_cloud.name"
 
 function TOOL:LeftClick( trace )
-    if SERVER and trace.Hit then
+    if trace.Hit then
         for i,ent in pairs(ents.FindInSphere(trace.HitPos,300)) do
             if ent:GetClass() == "ba2_virus_cloud" then
-                ent:Remove()
-                return true  
+                if SERVER then
+                    ent:Remove()
+                end
+                return true
             end
         end
     end

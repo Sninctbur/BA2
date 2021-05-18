@@ -135,6 +135,12 @@ net.Receive("BA2ZomDeathNotice",function()
     GAMEMODE:AddDeathNotice(name,team,inflictor:GetClass(),"Infected",83598)
 end)
 
+net.Receive("BA2PerformanceHint", function()
+    chat.AddText(Color(170,170,255), [[Bio-Annihilation II: Gamma Edition features some ]], Color(255,0,0), [[experimental ]], Color(170,170,255), [[performance improvements and other enhancements.
+Scroll down to the bottom of the "Spawners" and "Zombies" options to find them!
+]], Color(165,165,165), [[Disable this message in the "Miscellaneous" tab or with ba2_misc_gammaeditioninfo 0.]])
+end)
+
 -- Kill icons and names
 killicon.Add("nb_ba2_infected","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
 killicon.Add("nb_ba2_infected_citizen","vgui/infect_killicon.vtf", Color( 255, 0, 0, 255 ) )
@@ -372,6 +378,8 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Horde Spawner Interval","ba2_hs_interval",0.1,30,1)
         panel:NumSlider("Point Spawner Interval","ba2_ps_interval",0.1,30,1)
         panel:NumSlider("Safe Radius","ba2_hs_saferadius",0,10000,0)
+        panel:NumSlider("Detection Range","ba2_hs_zom_range",0,10000,0)
+        panel:ControlHelp("If set to 0, zombies spawned by the horde spawner will use the detection range from the \"Zombies\" tab. If you do change this, make sure to make it a bit greater than the Safe Radius.")
 
         -- local comboBox = panel:ComboBox("Zombie Appearance","ba2_hs_appearance")
         -- comboBox:AddChoice("0. Citizens",0)
@@ -395,6 +403,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Clean Up Stuck Zombies","ba2_hs_stuckclean")
         panel:CheckBox("More Spawn Locations","ba2_hs_morespawnlocations")
         panel:CheckBox("Proximity Spawning","ba2_hs_proximityspawns")
+        panel:CheckBox("Stop Targeting Outside Detection Range","ba2_hs_stoptargetingoutsidedetectionrange")
     end)
 
     -- INFECTION
@@ -460,6 +469,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:Help("THE FOLLOWING SETTINGS ARE EXPERIMENTAL. USE AT YOUR OWN RISK!")
         panel:Help("(They also might help with performance issues, though!)")
 
+        panel:CheckBox("Don't Target Noclipping Players","ba2_zom_notargetnoclip")
         panel:CheckBox("Pathtraced Wandering","ba2_zom_ptwander")
         panel:CheckBox("Handle Bad Paths","ba2_zom_handlebadpaths")
     end)
@@ -493,6 +503,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Air Waste View Shake","ba2_misc_airwasteshake")
         panel:CheckBox("No Navmesh Warning","ba2_misc_navmeshwarn")
         panel:CheckBox("Zombie Kill Credit","ba2_misc_addscore")
+        panel:CheckBox("Show Gamma Edition Info","ba2_misc_gammaeditioninfo")
 
         panel:Help("")
 

@@ -4,6 +4,7 @@ include("ba2/methods.lua")
 util.AddNetworkString("BA2NoNavmeshWarn")
 util.AddNetworkString("BA2ReloadCustoms")
 util.AddNetworkString("BA2ZomDeathNotice")
+util.AddNetworkString("BA2PerformanceHint")
 
 -- CreateConVar("ba2_cos_defaultcolor_r",133,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
 -- CreateConVar("ba2_cos_defaultcolor_g",165,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
@@ -37,6 +38,10 @@ CreateConVar("ba2_hs_morespawnlocations",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If ena
 CreateConVar("ba2_hs_proximityspawns",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, the Horde Spawner will spawn zombies close to targets instead of all over the map.]])
 CreateConVar("ba2_ps_interval",1,FCVAR_ARCHIVE,[[The Point Spawner will wait this long before spawning a new group of zombies.
 The lower this is, the faster zombies will spawn.]],0.1)
+CreateConVar("ba2_hs_zom_range",0,FCVAR_ARCHIVE,[[Multiply horde-spawned zombie targeting range by this amount.
+    Set to 0 to use ba2_zom_range instead.
+    If you do change this, make sure it is greater than ba2_hs_saferadius by a decent amount.]],0)
+CreateConVar("ba2_hs_stoptargetingoutsidedetectionrange",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, horde-spawned zombies will stop targeting entities outside of their detection range.]],0)
 
 CreateConVar("ba2_inf_contagionmult",1,FCVAR_ARCHIVE,[[Mutliply the distance the Bio-Virus can spread to others by this amount.
     Set to 0 to disable contagion.]],0)
@@ -90,6 +95,7 @@ CreateConVar("ba2_zom_ptwander",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, zom
 This can significantly increase performance when zombies are in confined areas.]])
 CreateConVar("ba2_zom_handlebadpaths",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, bad paths will be handled quickly instead of being left to lag the game.
 This can significantly increase performance when zombies are in confined areas.]])
+CreateConVar("ba2_zom_notargetnoclip",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, zombies won't target noclipping players.]])
 
 CreateConVar("ba2_misc_corpselife",10,FCVAR_ARCHIVE,[[The amount of time before a zombie's corpse is cleaned up.
     Set to -1 for infinite lifetime.]],-1
@@ -102,6 +108,7 @@ CreateConVar("ba2_misc_deathdropmask",1,FCVAR_ARCHIVE,[[If enabled, players will
 CreateConVar("ba2_misc_deathdropfilter",1,FCVAR_ARCHIVE,[[If enabled, players will drop all of their gas mask filters on death.]])
 CreateConVar("ba2_misc_headshoteff",1,FCVAR_ARCHIVE,[[If enabled, zombies' heads have a chance to comically explode when they are killed by a headshot.]])
 CreateConVar("ba2_misc_addscore",1,FCVAR_ARCHIVE,[[If enabled, killing a zombie will award a frag to the player who killed them.]])
+CreateConVar("ba2_misc_gammaeditioninfo",1,FCVAR_ARCHIVE,[[If enabled, shows information about experimental Gamma Edition features when you load in.]])
 CreateConVar("ba2_misc_isnpc",1,FCVAR_ARCHIVE,[[If enabled, other addons will consider zombies an NPC for the purpose of IsNPC() checks.
 Enabling this may correct interactions with some addons (for example, JMod), but can cause Lua errors in others. Enable at your own risk.]])
 
@@ -454,6 +461,7 @@ end
 -- Hooks and timers
 hook.Add("PlayerSpawn","ba2_initSpeed",function(p)
     p.BA2Infection = 0
+    p.BA2_DoNotTarget = false
 end)
 
 hook.Add("SetupMove","BA2_GrabSlow",function(p,mv,cmd)
@@ -483,6 +491,14 @@ hook.Add("OnEntityCreated","ba2_npcZomRelation",function(npc)
                 n:AddEntityRelationship(npc,D_HT,1)
             end
         end
+    end
+end)
+
+hook.Add("PlayerNoClip", "BA2_NoClipNoTarget", function(ply, desiredNoClipState)
+    if desiredNoClipState and GetConVar("ba2_zom_notargetnoclip"):GetBool() then
+        ply.BA2_DoNotTarget = true
+    else
+        ply.BA2_DoNotTarget = false
     end
 end)
 
@@ -632,6 +648,19 @@ hook.Add("PostGamemodeLoaded","BA2_NavmeshWarn",function()
     timer.Simple(2,function()
         if GetConVar("ba2_misc_navmeshwarn"):GetBool() and #navmesh.GetAllNavAreas() == 0 then
             net.Start("BA2NoNavmeshWarn")
+            net.Send(Entity(1))
+        end
+
+        if GetConVar("ba2_misc_gammaeditioninfo"):GetBool()
+            and not GetConVar("ba2_hs_stuckclean"):GetBool()
+            and not GetConVar("ba2_hs_morespawnlocations"):GetBool()
+            and not GetConVar("ba2_hs_proximityspawns"):GetBool()
+            and not GetConVar("ba2_hs_stoptargetingoutsidedetectionrange"):GetBool()
+            and not GetConVar("ba2_zom_ptwander"):GetBool()
+            and not GetConVar("ba2_zom_handlebadpaths"):GetBool()
+            and not GetConVar("ba2_zom_notargetnoclip"):GetBool()
+        then
+            net.Start("BA2PerformanceHint")
             net.Send(Entity(1))
         end
     end) 

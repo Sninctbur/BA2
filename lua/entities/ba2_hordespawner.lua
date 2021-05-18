@@ -204,22 +204,29 @@ function ENT:SpawnZoms(amnt)
 
                     zom:SetPos(spawnPos)
                     zom.noRise = true
-                    zom.SearchRadius = math.huge -- Can't have a horde if they don't actually chase people
+                    if not GetConVar("ba2_hs_proximityspawns"):GetBool() then
+                        zom.SearchRadius = math.huge -- Can't have a horde if they don't actually chase people
+                    end
+                    zom.BA2_CreatedByHordeSpawner = true
                     if GetConVar("ba2_hs_stuckclean"):GetBool() then
                         zom.BA2_RemoveIfStuck = true 
                     end 
+                    if GetConVar("ba2_hs_stoptargetingoutsidedetectionrange"):GetBool() then
+                        zom.BA2_StopTargetingOutsideDetectionRange = true
+                    end
                     zom:Spawn()
                     zom:Activate()
 
-                    self.zoms[zom:EntIndex()] = zom
+                    local entIndex = zom:EntIndex()
+                    self.zoms[entIndex] = zom
                     self.numberOfZoms = self.numberOfZoms + 1
-                    zom:CallOnRemove(zom:EntIndex().."-ZomRemove",function()
+                    zom:CallOnRemove(entIndex.."-ZomRemove",function()
                         timer.Simple(0,function()
                             if self.numberOfZoms ~= nil then
                                 self.numberOfZoms = self.numberOfZoms - 1
                             end
                             if self.zoms ~= nil then
-                                self.zoms[zom:EntIndex()] = nil 
+                                self.zoms[entIndex] = nil 
                             end
                         end)
                     end)

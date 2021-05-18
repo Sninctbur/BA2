@@ -25,7 +25,11 @@ function ENT:Initialize()
 	--self.InfBody = "models/Humans/Group01/male_02.mdl"
 
 	if SERVER then
-		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
+		if self.BA2_CreatedByHordeSpawner and GetConVar("ba2_hs_zom_range"):GetInt() > 0 then
+			self.SearchRadius = GetConVar("ba2_hs_zom_range"):GetInt()
+		else
+			self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
+		end
 		self.HullType = HULL_HUMAN
 		local hp = GetConVar("ba2_zom_health"):GetInt()
 		self:SetMaxHealth(hp)
@@ -166,7 +170,7 @@ end
 function ENT:IsValidEnemy(e)
 	local ent = e or self:GetEnemy()
 	return IsValid(ent) and ent:GetNoDraw() == false and ((ent:IsNPC()) 
-		or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive()) 
+		or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive() and not ent.BA2_DoNotTarget)
 		or (ent:IsNextBot() and !string.StartWith(ent:GetClass(),"nb_ba2_infected")))
 end
 function ENT:GetAttacking()
@@ -249,7 +253,10 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			-- self:SetSequence("fall_0"..math.random(1,9))
 		elseif not self:GetAttacking() and not self:GetStunned() then
 			-- Todo: End attacking animation if it's still going
-			if self:IsValidEnemy() or IsValid(self:SearchForEnemy()) then -- Pursuit
+			if (self:IsValidEnemy() or IsValid(self:SearchForEnemy()))
+				and not self:GetEnemy().BA2_DoNotTarget
+				and not (self.BA2_StopTargetingOutsideDetectionRange and path:GetLength() > self.SearchRadius)
+			then -- Pursuit
 				self:PursuitSpeed()
 
 				--self:ChaseEnemy()
@@ -318,7 +325,6 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					end
 				elseif handleBadPaths then
 					self:HandleStuck()
-					debugoverlay.Cross(self.NavTarget, 20, 3, Color(255,0,0))
 				end
 
 				if not handleBadPaths then
@@ -366,7 +372,11 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 		if self.NavTarget then
 			debugoverlay.Cross(self.NavTarget, 3, 1, Color(0,255,0))
 		end
-		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
+		if self.BA2_CreatedByHordeSpawner and GetConVar("ba2_hs_zom_range"):GetInt() > 0 then
+			self.SearchRadius = GetConVar("ba2_hs_zom_range"):GetInt()
+		else
+			self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
+		end
 		coroutine.yield()
 	end
 end
@@ -376,7 +386,12 @@ function ENT:FindRandomNavTarget()
 		local tr = util.TraceLine( {
 			start = self:GetPos(),
 			endpos = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200,
-			filter = function( ent ) if ( ent:GetClass() == "prop_physics" ) then return true end end
+			filter = {"nb_ba2_infected",
+			"nb_ba2_infected_citizen",
+			"nb_ba2_infected_combine",
+			"nb_ba2_infected_custom",
+			"nb_ba2_infected_rebel",
+			"prop_physics"} -- following advice from the wiki, i'm not gonna use a function here
 		} )
 	
 		return tr.HitPos
@@ -480,6 +495,7 @@ function ENT:HandleStuck()
 	--print(self:EntIndex(),"BA2: Handling stuck")
 	self.loco:ClearStuck()
 	self.BA2_PositionBeforeHandleStuck = self:GetPos()
+	debugoverlay.Cross(self.NavTarget, 20, 3, Color(255,0,0))
 
 	if self:IsValidEnemy() then
 		self:PursuitSpeed()
@@ -641,13 +657,20 @@ function ENT:ZombieSmash(ent)
 
 					if ent.BA2_DoorHealth <= 0 then
 						ent:EmitSound("ambient/materials/door_hit1.wav")
+						local usedEntityForProp = ent
+
+						-- if the functional door is an invisible brush where the visible "door" is a prop
+						-- god damn you rp_riverden_v1a
+						if table.IsEmpty(ent:GetMaterials()) and ent:GetChildren()[1] then
+							usedEntityForProp = ent:GetChildren()[1]
+						end
 
 						local prop = ents.Create("prop_physics")
-						prop:SetModel(ent:GetModel())
-						prop:SetSkin(ent:GetSkin() or 0)
-						prop:SetBodygroup(0,ent:GetBodygroup(0) or 0)
-						prop:SetPos(ent:GetPos())
-						prop:SetAngles(ent:GetAngles())
+						prop:SetModel(usedEntityForProp:GetModel())
+						prop:SetSkin(usedEntityForProp:GetSkin() or 0)
+						prop:SetBodygroup(0,usedEntityForProp:GetBodygroup(0) or 0)
+						prop:SetPos(usedEntityForProp:GetPos())
+						prop:SetAngles(usedEntityForProp:GetAngles())
 						prop:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
 						prop:SetSolid(SOLID_NONE)
 
@@ -660,14 +683,25 @@ function ENT:ZombieSmash(ent)
 							ent:SetSolid(SOLID_NONE)
 						end
 
+						if usedEntityForProp ~= ent and IsValid(usedEntityForProp) then
+							usedEntityForProp:SetNoDraw(true)
+							usedEntityForProp:SetSolid(SOLID_NONE)
+						end
+
 						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
 						if doorRespawn > 0 then
 							timer.Simple(doorRespawn,function()
-								if IsValid(ent) then
+								if IsValid(ent) and ent.BA2_DoorHealth ~= 200 then
 									ent:SetNoDraw(false)
 									ent:SetCollisionGroup(COLLISION_GROUP_NONE)
 									ent:SetSolid(SOLID_OBB)
 									ent.BA2_DoorHealth = 200
+								end
+
+								if usedEntityForProp ~= ent and IsValid(usedEntityForProp) then
+									usedEntityForProp:SetNoDraw(false)
+									usedEntityForProp:SetCollisionGroup(COLLISION_GROUP_NONE)
+									usedEntityForProp:SetSolid(SOLID_OBB)
 								end
 
 								SafeRemoveEntity(prop)
