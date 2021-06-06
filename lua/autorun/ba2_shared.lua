@@ -401,20 +401,51 @@ sound.Add({
 game.AddDecal("BA2_VirusBloodStain","decals/bloodstain_002")
 team.SetUp(83598,"BA2_NPCs",Color(250,46,46),false)
 
--- if ArcMedShots then
---     ArcMedShots["ba2"] = {
---         QuickName = "Experimental Treatment",
---         PrintName = "Experimental Treatment",
---         Description = {"The closest thing to a cure...", "Reduces Bio-Virus infection by 50%", "Hurts you for 30 HP"},
---         DescriptionColors = {COLOR_NEUTRAL, COLOR_GOOD, COLOR_BAD},
---         OnInject = function(ply, infl)
---             if SERVER then
---                 if ply.BAInfection ~= nil then
---                     ply.BAInfection = math.floor(ply.BAInfection / 2)
---                 end
---                 ply:TakeDamage(30)
---             end
---         end, -- shared
---         Skin = 0,
---     }
--- end
+if ArcticMedShots and not ArcticMedShots["ba2_cure"] then
+    local COLOR_NEUTRAL = Color(255, 255, 255)
+    local COLOR_GOOD = Color(25, 255, 25)
+    local COLOR_BAD = Color(255, 25, 25)
+
+    ArcticMedShots["ba2_cure"] = {
+        QuickName = "Cure Shot",
+        PrintName = "Bio-Virus Experimental Treatment",
+        Description = {"Experimental drug to kill S2S-1 viral cells in humans.", "  Immediately eliminates infection."},
+        DescriptionColors = {COLOR_NEUTRAL, COLOR_GOOD},
+        AvailableForNPCs = true,
+        OnInject = function(ply, infl)
+            if SERVER then
+                ply.BA2Infection = 0
+            end
+        end, -- shared
+        Skin = 0,
+
+        Material = Material("entities/ba2_arc_medshot_cure.png"),
+        ShotMaterial = "models/weapons/v_models/arc_vm_healthshot/shot_ba2_cure"
+    }
+
+    ArcticMedShots["ba2_cure"].ID = #ArcticMedShots_IDToShortName + 1
+    ArcticMedShots_IDToShortName[#ArcticMedShots_IDToShortName + 1] = "ba2_cure"
+
+    ArcticMedShots["ba2_infect"] = {
+        QuickName = "Bio-Virus",
+        PrintName = "S2S-1 \"Bio-Virus\" Injectable Sample",
+        Description = {"Sample containing live S2S-1 viral cells.", "Contains enough of the virus to kill anyone without external intervention.", "  Infects you with the Bio-Virus."},
+        DescriptionColors = {COLOR_NEUTRAL, COLOR_NEUTRAL, COLOR_BAD},
+        AvailableForNPCs = true,
+        OnInject = function(ply, infl)
+            if SERVER then
+                BA2_AddInfection(ply, 18000)
+            end
+        end, -- shared
+        Skin = 0,
+
+        Material = Material("entities/ba2_arc_medshot_infect.png"),
+        ShotMaterial = "models/weapons/v_models/arc_vm_healthshot/shot_ba2_infect"
+    }
+
+    ArcticMedShots["ba2_infect"].ID = #ArcticMedShots_IDToShortName + 1
+    ArcticMedShots_IDToShortName[#ArcticMedShots_IDToShortName + 1] = "ba2_infect"
+
+    AddCSLuaFile("entities/ba2_arc_medshot_cure.lua")
+    AddCSLuaFile("entities/ba2_arc_medshot_infect.lua")
+end

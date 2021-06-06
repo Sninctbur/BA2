@@ -566,7 +566,7 @@ end)
 
 
 hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent,dmg)
-    if inf ~= nil and GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
+    if inf ~= nil and inf:IsValid() and GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
         or (IsValid(p) and p.BA2Infection > 0) 
         or inf:GetClass() == BA2_InfectionManager()) then
         BA2_InfectionDeath(p,inf,ent,dmg)
@@ -665,4 +665,13 @@ hook.Add("PostGamemodeLoaded","BA2_NavmeshWarn",function()
         end
     end) 
 end)
+
+if ArcticMedShots then
+    hook.Add("OnEntityCreated", "BA2_ArcticMedshotSamplerModifier", function (ent)
+        if ent:GetClass() == "arc_medshot_sampler" then
+            ent.Shots["ba2_cure"] = 1
+            ent.Shots["ba2_infect"] = 1
+        end
+    end)
+end
 -- Code by Sninctbur
