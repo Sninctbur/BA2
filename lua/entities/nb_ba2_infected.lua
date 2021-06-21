@@ -881,6 +881,8 @@ function ENT:BreakLLeg(dmginfo)
 	end)
 
 	timer.Start(timer1)
+
+	self:SetCrawlingCollision()
 end
 function ENT:BreakRLeg(dmginfo)
 	self.BA2_RLegDown = true
@@ -912,8 +914,19 @@ function ENT:BreakRLeg(dmginfo)
 	end)
 
 	timer.Start(timer1)
-end
 
+	self:SetCrawlingCollision()
+end
+function ENT:SetCrawlingCollision()
+	if not self.BA2_CrawlingCollision then
+		self:SetCollisionBounds(
+			Vector(-50, -13, 0), -- Minimum bound
+			Vector(55, 13, 13) -- Maximum bound
+		)
+
+		self.BA2_CrawlingCollision = true
+	end
+end
 
 function ENT:OnTraceAttack(dmginfo,dir,trace)
 	if trace.HitGroup == HITGROUP_HEAD then
@@ -1399,5 +1412,13 @@ end
 
 function ENT:HasCondition(condition)
 	return false 
+end
+
+function ENT:GetCurrentWeaponProficiency()
+	return WEAPON_PROFICIENCY_PERFECT
+end
+
+function ENT:SetCurrentWeaponProficiency(proficiency)
+
 end
 -- Hello from the past -Sninctbur
