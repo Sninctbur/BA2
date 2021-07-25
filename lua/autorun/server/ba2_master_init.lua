@@ -1,5 +1,6 @@
 include("autorun/ba2_shared.lua")
 include("ba2/methods.lua")
+include("ba2/door_manager.lua")
 
 util.AddNetworkString("BA2NoNavmeshWarn")
 util.AddNetworkString("BA2ReloadCustoms")
@@ -96,6 +97,7 @@ This can significantly increase performance when zombies are in confined areas.]
 CreateConVar("ba2_zom_handlebadpaths",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, bad paths will be handled quickly instead of being left to lag the game.
 This can significantly increase performance when zombies are in confined areas.]])
 CreateConVar("ba2_zom_notargetnoclip",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, zombies won't target noclipping players.]])
+CreateConVar("ba2_zom_betterdoorbreaking",0,FCVAR_ARCHIVE,[[!EXPERIMENTAL! If enabled, many broken doors will not have a strange void behind them.]])
 
 CreateConVar("ba2_misc_corpselife",10,FCVAR_ARCHIVE,[[The amount of time before a zombie's corpse is cleaned up.
     Set to -1 for infinite lifetime.]],-1
@@ -659,6 +661,7 @@ hook.Add("PostGamemodeLoaded","BA2_NavmeshWarn",function()
             and not GetConVar("ba2_zom_ptwander"):GetBool()
             and not GetConVar("ba2_zom_handlebadpaths"):GetBool()
             and not GetConVar("ba2_zom_notargetnoclip"):GetBool()
+            and not GetConVar("ba2_zom_betterdoorbreaking"):GetBool()
         then
             net.Start("BA2PerformanceHint")
             net.Send(Entity(1))

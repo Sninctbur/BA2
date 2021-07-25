@@ -472,6 +472,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Don't Target Noclipping Players","ba2_zom_notargetnoclip")
         panel:CheckBox("Pathtraced Wandering","ba2_zom_ptwander")
         panel:CheckBox("Handle Bad Paths","ba2_zom_handlebadpaths")
+        panel:CheckBox("Better Door Breaking","ba2_zom_betterdoorbreaking")
     end)
 
     -- AIR WASTE

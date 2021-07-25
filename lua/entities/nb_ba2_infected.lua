@@ -324,6 +324,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 						self:HandleStuck()
 					end
 				elseif handleBadPaths then
+					self:SetEnemy(self:SearchForEnemy())
 					self:HandleStuck()
 				end
 
@@ -657,56 +658,7 @@ function ENT:ZombieSmash(ent)
 
 					if ent.BA2_DoorHealth <= 0 then
 						ent:EmitSound("ambient/materials/door_hit1.wav")
-						local usedEntityForProp = ent
-
-						-- if the functional door is an invisible brush where the visible "door" is a prop
-						-- god damn you rp_riverden_v1a
-						if table.IsEmpty(ent:GetMaterials()) and ent:GetChildren()[1] then
-							usedEntityForProp = ent:GetChildren()[1]
-						end
-
-						local prop = ents.Create("prop_physics")
-						prop:SetModel(usedEntityForProp:GetModel())
-						prop:SetSkin(usedEntityForProp:GetSkin() or 0)
-						prop:SetBodygroup(0,usedEntityForProp:GetBodygroup(0) or 0)
-						prop:SetPos(usedEntityForProp:GetPos())
-						prop:SetAngles(usedEntityForProp:GetAngles())
-						prop:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
-						prop:SetSolid(SOLID_NONE)
-
-						prop:Spawn()
-						prop:Activate()
-						prop:GetPhysicsObject():ApplyForceCenter(self:GetForward() * 5000)
-
-						if IsValid(ent) then
-							ent:SetNoDraw(true)
-							ent:SetSolid(SOLID_NONE)
-						end
-
-						if usedEntityForProp ~= ent and IsValid(usedEntityForProp) then
-							usedEntityForProp:SetNoDraw(true)
-							usedEntityForProp:SetSolid(SOLID_NONE)
-						end
-
-						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
-						if doorRespawn > 0 then
-							timer.Simple(doorRespawn,function()
-								if IsValid(ent) and ent.BA2_DoorHealth ~= 200 then
-									ent:SetNoDraw(false)
-									ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-									ent:SetSolid(SOLID_OBB)
-									ent.BA2_DoorHealth = 200
-								end
-
-								if usedEntityForProp ~= ent and IsValid(usedEntityForProp) then
-									usedEntityForProp:SetNoDraw(false)
-									usedEntityForProp:SetCollisionGroup(COLLISION_GROUP_NONE)
-									usedEntityForProp:SetSolid(SOLID_OBB)
-								end
-
-								SafeRemoveEntity(prop)
-							end)
-						end
+						BA2_BreakDoor(ent, self:GetForward() * 5000)
 					elseif math.random(1,100) >= ent.BA2_DoorHealth then
 						ent:EmitSound("physics/wood/wood_strain"..math.random(2,4)..".wav")
 					end
