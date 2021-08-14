@@ -658,7 +658,7 @@ function ENT:ZombieSmash(ent)
 
 					if ent.BA2_DoorHealth <= 0 then
 						ent:EmitSound("ambient/materials/door_hit1.wav")
-						BA2_BreakDoor(ent, self:GetForward() * 5000)
+						BA2_BreakDoor(ent, self:GetForward())
 					elseif math.random(1,100) >= ent.BA2_DoorHealth then
 						ent:EmitSound("physics/wood/wood_strain"..math.random(2,4)..".wav")
 					end

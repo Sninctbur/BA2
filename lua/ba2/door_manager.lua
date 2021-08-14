@@ -19,12 +19,13 @@
     This hooks into "InitPostEntity" to make sure that all map entities are loaded when we do this.
 ]]
 
-hook.Add("InitPostEntity", "BA2_InitializeDoorChildrenTable", function()
+local function initDoorChildrenTable()
     if not BA2_DoorChildren then
         BA2_DoorChildren = {}
 
         for i, ent in pairs(ents.GetAll()) do
-            if (string.StartWith(ent:GetClass(),"func_door") or string.StartWith(ent:GetClass(),"prop_door")) and ent:MapCreationID() ~= -1 then
+            local class = ent:GetClass()
+            if (string.StartWith(class, "func_door") or string.StartWith(class, "prop_door")) and ent:MapCreationID() ~= -1 then
                 local doorMaster = ent:GetInternalVariable("m_hMaster")
                 if IsValid(doorMaster) and doorMaster:MapCreationID() ~= -1 then
                     BA2_DoorChildren[doorMaster:MapCreationID()] = ent:MapCreationID()
@@ -32,7 +33,9 @@ hook.Add("InitPostEntity", "BA2_InitializeDoorChildrenTable", function()
             end
         end
     end
-end)
+end
+
+hook.Add("InitPostEntity", "BA2_InitializeDoorChildrenTable", initDoorChildrenTable)
 
 --[[
     The second case is comparatively easier to deal with.
@@ -42,185 +45,290 @@ end)
 ]]
 
 hook.Add("AcceptInput", "BA2_BreakChildViaMapIO", function( ent, name, activator, caller, data )
-    if name == "Open" and caller.BA2_DoorBroken and not ent.BA2_DoorBroken and GetConVar("ba2_zom_betterdoorbreaking"):GetBool() then
-        BA2_BreakDoor(ent, caller.BA2_BreakForce)
-        return true
+    if caller.BA2_DoorInternalsInitialized then
+        if name == "Open" and caller.BA2_DoorBroken and not ent.BA2_DoorBroken then
+            BA2_BreakDoor(ent, caller.BA2_BreakForce)
+            return true
+        elseif name == "Close" and not caller.BA2_DoorBroken and ent.BA2_DoorBroken then
+            BA2_RepairDoor(ent)
+            print(caller, " demands that ", ent, " be restored!")
+            return true
+        end
     end
 end)
 
+-- to understand all of the weird hasspawnflags, fire, and internalvariable things in here, look at: 
+    -- https://developer.valvesoftware.com/wiki/Func_door
+        -- FLAGS:
+            -- flag 4096: door is silent
+            -- flag 2048: door starts locked
+            -- flag 1 (obsolete, but some may still use it): door starts open
+        -- INPUTS (FIRED):
+            -- Open, Close, Unlock, Lock: all pretty self explanatory
+    -- https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/server/doors.cpp
+        -- noise1, noise2, m_flWait
+    -- https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/server/props.cpp
+        -- soundunlockedoverride, soundmoveoverride, soundopenoverride, m_eSpawnPosition, returndelay
+-- either m_flWait or returndelay is used to determine return delay depending on the type of door
+-- either noise1/2 or soundunlocked/move/openoverride are used for moving sounds depending on the type of door, but we set/reset them both (no harm done)
+-- m_eSpawnPosition and flag 1 are both checked here when determining if the door starts open
 
-function BA2_BreakDoor(ent, force)
-    if ent.BA2_DoorBroken then return end
+local soundUnlockedVariable = "soundunlockedoverride"
+local soundMoveVariable = "soundmoveoverride"
+local soundOpenVariable = "soundopenoverride"
+local noiseMovingVariable = "noise1"
+local noiseArrivedVariable = "noise2" -- real nice names i have to work with here
 
-    ent.BA2_DoorBroken = true
-    ent.BA2_BreakForce = force
+local doorMasterVariable = "m_hMaster"
 
-    local usedEntityForProp = ent
+local function initDoorInternals(ent)
+    ent.BA2_ReturnDelayVariable = "returndelay"
 
-    local doBetterDoorBreaking = GetConVar("ba2_zom_betterdoorbreaking"):GetBool()
+    ent.BA2_OriginalUnlockedSound = ent:GetInternalVariable(soundUnlockedVariable)
+    ent.BA2_OriginalMovingSound = ent:GetInternalVariable(soundMoveVariable)
+    ent.BA2_OriginalOpenSound = ent:GetInternalVariable(soundOpenVariable)
+    ent.BA2_OriginalMovingNoise = ent:GetInternalVariable(noiseMovingVariable)
+    ent.BA2_OriginalArrivalNoise = ent:GetInternalVariable(noiseArrivedVariable)
+    ent.BA2_OriginalReturnDelay = ent:GetInternalVariable(ent.BA2_ReturnDelayVariable)
 
-    -- to understand all of the weird hasspawnflags, fire, and internalvariable things in here, look at: 
-        -- https://developer.valvesoftware.com/wiki/Func_door
-            -- FLAGS:
-                -- flag 4096: door is silent
-                -- flag 2048: door starts locked
-                -- flag 1 (obsolete, but some may still use it): door starts open
-            -- INPUTS (FIRED):
-                -- Open, Close, Unlock, Lock: all pretty self explanatory
-        -- https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/server/doors.cpp
-            -- noise1, noise2, m_flWait
-        -- https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/server/props.cpp
-            -- soundunlockedoverride, soundmoveoverride, soundopenoverride, m_eSpawnPosition, returndelay
-    -- either m_flWait or returndelay is used to determine return delay depending on the type of door
-    -- either noise1/2 or soundunlocked/move/openoverride are used for moving sounds depending on the type of door, but we set/reset them both (no harm done)
-    -- m_eSpawnPosition and flag 1 are both checked here when determining if the door starts open
+    if not ent.BA2_OriginalReturnDelay then
+        ent.BA2_ReturnDelayVariable = "m_flWait"
+        ent.BA2_OriginalReturnDelay = ent:GetInternalVariable(ent.BA2_ReturnDelayVariable)
+    end
 
-    -- these are defined here to make sure they can be accessed where they need to be
-    local originalUnlockedSound, originalMovingSound, originalOpenSound, originalMovingNoise, originalArrivalNoise, originalReturnDelay, doorIsSilent--, childOriginalReturnDelay
-
-    local soundUnlockedVariable = "soundunlockedoverride"
-    local soundMoveVariable = "soundmoveoverride"
-    local soundOpenVariable = "soundopenoverride"
-    local noiseMovingVariable = "noise1"
-    local noiseArrivedVariable = "noise2" -- real nice names i have to work with here
-    local returnDelayVariable = "returndelay"
-
-    local doorMasterVariable = "m_hMaster"
-
-    if doBetterDoorBreaking then
-        originalUnlockedSound = ent:GetInternalVariable(soundUnlockedVariable)
-        originalMovingSound = ent:GetInternalVariable(soundMoveVariable)
-        originalOpenSound = ent:GetInternalVariable(soundOpenVariable)
-        originalMovingNoise = ent:GetInternalVariable(noiseMovingVariable)
-        originalArrivalNoise = ent:GetInternalVariable(noiseArrivedVariable)
-        originalReturnDelay = ent:GetInternalVariable(returnDelayVariable)
-
-        if not originalReturnDelay then
-            returnDelayVariable = "m_flWait"
-            originalReturnDelay = ent:GetInternalVariable(returnDelayVariable)
-        end
-
-        doorIsSilent = ent:HasSpawnFlags(4096)
-        -- for doors that automatically close, get them to not do that while we're messing with it
-        if originalReturnDelay ~= -1 then
-            ent:SetSaveValue(returnDelayVariable, -1)
-        end
-
-        -- make the door silent temporarily (if we need to) so you don't hear door opening sfx when the zombie breaks the door
-
-        if not doorIsSilent then
-            ent:SetSaveValue(soundUnlockedVariable, "DoorSound.Null")
-            ent:SetSaveValue(soundMoveVariable, "DoorSound.Null")
-            ent:SetSaveValue(soundOpenVariable, "DoorSound.Null")
-            ent:SetSaveValue(noiseMovingVariable, "DoorSound.Null")
-            ent:SetSaveValue(noiseArrivedVariable, "DoorSound.Null")
-        end
-
-        local childDoorMapCreationID = BA2_DoorChildren[ent:MapCreationID()]
-        if childDoorMapCreationID then
-            childDoor = ents.GetMapCreatedEntity(childDoorMapCreationID)
-            if IsValid(childDoor) and not childDoor.BA2_DoorBroken then
-                BA2_BreakDoor(childDoor, force)
-            end
-        end
-
-        local doorMaster = ent:GetInternalVariable(doorMasterVariable, ent)
-        if IsValid(doorMaster) and not doorMaster.BA2_DoorBroken then
-            BA2_BreakDoor(doorMaster, force)
-        end
-
-        -- open that shit!
-        ent:Fire("Unlock")
-        ent:Fire("Open")
+    ent.BA2_DoorIsSilent = ent:HasSpawnFlags(4096)
+    -- for doors that automatically close, get them to not do that while we're messing with it
+    if ent.BA2_OriginalReturnDelay ~= -1 then
+        ent:SetSaveValue(ent.BA2_ReturnDelayVariable, -1)
     end
 
     -- if the functional door is an invisible brush where the visible "door" is a prop
     -- god damn you rp_riverden_v1a
-    if table.IsEmpty(ent:GetMaterials()) then
-        for i, child in pairs(ent:GetChildren()) do
-            if child:GetModel() then
-                usedEntityForProp = child
-                break
-            end
-        end
+    ent.BA2_PropsToCreate = {ent}
 
-        if usedEntityForProp == ent then -- if we didn't find a suitable child (this should NEVER happen!)
-            ErrorNoHalt("Door entity ", ent, " has no materials and has no suitable children to use as a prop!")
+    if table.IsEmpty(ent:GetMaterials()) then
+        ent.BA2_PropsToCreate = {}
+    end
+
+    for i, child in pairs(ent:GetChildren()) do
+        if child:GetModel() then
+            table.insert(ent.BA2_PropsToCreate, child)
         end
     end
 
+    if table.IsEmpty(ent.BA2_PropsToCreate) then -- if we didn't find a suitable child (this should NEVER happen!)
+        ErrorNoHalt("[BA2] Door entity ", ent, "(", ent:MapCreationID(), " ", game.GetMap(), ") has no materials and has no suitable children to use as a prop!")
+    end
+
+    -- if table.IsEmpty(ent:GetMaterials()) then
+    --     for i, child in pairs(ent:GetChildren()) do
+    --         if child:GetModel() then
+    --             ent.BA2_UsedEntityForProp = child
+    --             break
+    --         end
+    --     end
+
+    --     if ent.BA2_UsedEntityForProp == ent then 
+    --         ErrorNoHalt("[BA2] Door entity ", ent, "(", ent:MapCreationID(), " ", game.GetMap(), ") has no materials and has no suitable children to use as a prop!")
+    --     end
+    -- end
+
+    ent.BA2_DoorInternalsInitialized = true
+end
+
+local function checkForCompanion(ent)
+    if not BA2_DoorChildren then
+        -- because InitPostEntity just doesn't fire sometimes??? fuck you gmod
+        initDoorChildrenTable()
+    end
+
+    local childDoorMapCreationID = BA2_DoorChildren[ent:MapCreationID()]
+    if childDoorMapCreationID then
+        childDoor = ents.GetMapCreatedEntity(childDoorMapCreationID)
+        if IsValid(childDoor) then
+            return childDoor
+        end
+    end
+
+    local doorMaster = ent:GetInternalVariable(doorMasterVariable, ent)
+    if IsValid(doorMaster) then
+        return doorMaster
+    end
+end
+
+local function hideEntity(ent)
+    ent:SetNoDraw(true)
+    ent:SetSolid(SOLID_NONE)
+end
+
+local function restoreEntity(ent)
+    ent:SetNoDraw(false)
+    ent:SetCollisionGroup(COLLISION_GROUP_NONE)
+    ent:SetSolid(SOLID_OBB)
+end
+
+local function createDebrisProp(ent, force)
     local prop = ents.Create("prop_physics")
-    prop:SetModel(usedEntityForProp:GetModel())
-    prop:SetSkin(usedEntityForProp:GetSkin() or 0)
-    prop:SetBodygroup(0,usedEntityForProp:GetBodygroup(0) or 0)
-    prop:SetPos(usedEntityForProp:GetPos())
-    prop:SetAngles(usedEntityForProp:GetAngles())
+    prop:SetModel(ent:GetModel())
+    prop:SetSkin(ent:GetSkin() or 0)
+    prop:SetBodygroup(0,ent:GetBodygroup(0) or 0)
+    prop:SetPos(ent:GetPos())
+    prop:SetAngles(ent:GetAngles())
     prop:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
     prop:SetSolid(SOLID_NONE)
 
     prop:Spawn()
     prop:Activate()
-    prop:GetPhysicsObject():ApplyForceCenter(force)
-
-    if IsValid(ent) then
-        ent:SetNoDraw(true)
-        ent:SetSolid(SOLID_NONE)
+    local physObj = prop:GetPhysicsObject()
+    if IsValid(physObj) then -- why the HELL is this necessary?
+        physObj:ApplyForceCenter(force)
     end
 
-    if usedEntityForProp ~= ent and IsValid(usedEntityForProp) then
-        usedEntityForProp:SetNoDraw(true)
-        usedEntityForProp:SetSolid(SOLID_NONE)
+    return prop
+end
+
+function BA2_BreakDoor(ent, forward)
+    if ent.BA2_DoorBroken then return end
+
+    local entPhysObj = ent:GetPhysicsObject()
+    if IsValid(entPhysObj) then
+        force = forward * entPhysObj:GetVolume() * 0.5
+    else
+        force = forward * 5000
     end
+
+    ent.BA2_DoorBroken = true
+    ent.BA2_BreakForce = forward
+    ent.BA2_CreatedProps = {}
+
+    if not ent.BA2_DoorInternalsInitialized then
+        initDoorInternals(ent)
+    end
+
+    -- make the door silent temporarily (if we need to) so you don't hear door opening sfx when the zombie breaks the door
+
+    if not ent.BA2_DoorIsSilent then
+        ent:SetSaveValue(soundUnlockedVariable, "DoorSound.Null")
+        ent:SetSaveValue(soundMoveVariable, "DoorSound.Null")
+        ent:SetSaveValue(soundOpenVariable, "DoorSound.Null")
+        ent:SetSaveValue(noiseMovingVariable, "DoorSound.Null")
+        ent:SetSaveValue(noiseArrivedVariable, "DoorSound.Null")
+    end
+
+    local companion = checkForCompanion(ent)
+    if companion and not companion.BA2_DoorBroken then
+        BA2_BreakDoor(companion, forward)
+    end
+
+    hideEntity(ent)
+
+    -- open that shit!
+    ent:Fire("Unlock")
+    ent:Fire("Open")
+
+    -- prevent player from using the invisible door
+    ent:Fire("Lock")
+
+    -- local prop = ents.Create("prop_physics")
+    -- prop:SetModel(ent.BA2_UsedEntityForProp:GetModel())
+    -- prop:SetSkin(ent.BA2_UsedEntityForProp:GetSkin() or 0)
+    -- prop:SetBodygroup(0,ent.BA2_UsedEntityForProp:GetBodygroup(0) or 0)
+    -- prop:SetPos(ent.BA2_UsedEntityForProp:GetPos())
+    -- prop:SetAngles(ent.BA2_UsedEntityForProp:GetAngles())
+    -- prop:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+    -- prop:SetSolid(SOLID_NONE)
+
+    -- prop:Spawn()
+    -- prop:Activate()
+    -- prop:GetPhysicsObject():ApplyForceCenter(force)
+
+    -- ent.BA2_PropDoor = prop
+
+    for index, entToPropify in pairs(ent.BA2_PropsToCreate) do
+        if IsValid(entToPropify) then
+            hideEntity(entToPropify)
+            ent.BA2_CreatedProps[index] = createDebrisProp(entToPropify, force)
+        end
+    end
+
+    -- if IsValid(ent) then
+    --     ent:SetNoDraw(true)
+    --     ent:SetSolid(SOLID_NONE)
+    -- end
+
+    -- if ent.BA2_UsedEntityForProp ~= ent and IsValid(ent.BA2_UsedEntityForProp) then
+    --     ent.BA2_UsedEntityForProp:SetNoDraw(true)
+    --     ent.BA2_UsedEntityForProp:SetSolid(SOLID_NONE)
+    -- end
 
     local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
     if doorRespawn > 0 then
         timer.Simple(doorRespawn,function()
-            if IsValid(ent) and ent.BA2_DoorHealth ~= 200 then
-                if doBetterDoorBreaking then
-                    -- if the doors started locked or open, we need to know that while returning stuff to normal
-                    local doorStartsLocked = ent:HasSpawnFlags(2048)
-                    local doorStartsOpen = ent:HasSpawnFlags(1) or (ent:GetInternalVariable("m_eSpawnPosition") ~= 0)
-
-                    if originalReturnDelay ~= -1 then
-                        ent:SetSaveValue(returnDelayVariable, originalReturnDelay)
-                    end
-
-                    if doorStartsLocked then
-                        ent:Fire("Lock")
-                    end
-
-                    if not doorStartsOpen then
-                        ent:Fire("Close")
-                    end
-
-                    -- give the door its sounds back
-                    if not doorIsSilent then
-                        ent:SetSaveValue(soundUnlockedVariable, originalUnlockedSound)
-                        ent:SetSaveValue(soundMoveVariable, originalMovingSound)
-                        ent:SetSaveValue(soundOpenVariable, originalOpenSound)
-                        ent:SetSaveValue(noiseMovingVariable, originalMovingNoise)
-                        ent:SetSaveValue(noiseArrivedVariable, originalArrivalNoise)
-                    end
-
-                    -- if IsValid(childDoor) and childOriginalReturnDelay ~= -1 then
-                    --     childDoor:SetSaveValue(returnDelayVariable, childOriginalReturnDelay)
-                    -- end
-                end
-
-                ent:SetNoDraw(false)
-                ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-                ent:SetSolid(SOLID_OBB)
-                ent.BA2_DoorHealth = 200
-                ent.BA2_DoorBroken = false
-            end
-
-            if usedEntityForProp ~= ent and IsValid(usedEntityForProp) then
-                usedEntityForProp:SetNoDraw(false)
-                usedEntityForProp:SetCollisionGroup(COLLISION_GROUP_NONE)
-                usedEntityForProp:SetSolid(SOLID_OBB)
-            end
-
-            SafeRemoveEntity(prop)
+            BA2_RepairDoor(ent)
         end)
     end
+end
+
+function BA2_RepairDoor(ent)
+    if not ent.BA2_DoorBroken or not ent.BA2_DoorInternalsInitialized then return end
+
+    if IsValid(ent) then
+        -- if the doors started locked or open, we need to know that while returning stuff to normal
+        local doorStartsLocked = ent:HasSpawnFlags(2048)
+        local doorStartsOpen = ent:HasSpawnFlags(1) or (ent:GetInternalVariable("m_eSpawnPosition") ~= 0)
+
+        if ent.BA2_OriginalReturnDelay ~= -1 then
+            ent:SetSaveValue(ent.BA2_ReturnDelayVariable, ent.BA2_OriginalReturnDelay)
+        end
+
+        -- give the door its sounds back
+        if not ent.BA2_DoorIsSilent then
+            ent:SetSaveValue(soundUnlockedVariable, ent.BA2_OriginalUnlockedSound)
+            ent:SetSaveValue(soundMoveVariable, ent.BA2_OriginalMovingSound)
+            ent:SetSaveValue(soundOpenVariable, ent.BA2_OriginalOpenSound)
+            ent:SetSaveValue(noiseMovingVariable, ent.BA2_OriginalMovingNoise)
+            ent:SetSaveValue(noiseArrivedVariable, ent.BA2_OriginalArrivalNoise)
+        end
+
+        restoreEntity(ent)
+
+        ent:Fire("Unlock")
+
+        if not doorStartsOpen then
+            ent:Fire("Close")
+        end
+
+        if doorStartsLocked then
+            ent:Fire("Lock")
+        end
+
+        -- ent:SetNoDraw(false)
+        -- ent:SetCollisionGroup(COLLISION_GROUP_NONE)
+        -- ent:SetSolid(SOLID_OBB)
+        for index, propifiedEnt in pairs(ent.BA2_PropsToCreate) do
+            local createdProp = ent.BA2_CreatedProps[index]
+            if IsValid(createdProp) then
+                SafeRemoveEntity(createdProp)
+            end
+
+            if IsValid(propifiedEnt) then
+                restoreEntity(propifiedEnt)
+            end
+        end
+        ent.BA2_DoorHealth = 200
+        ent.BA2_DoorBroken = false
+
+        local companion = checkForCompanion(ent)
+        if companion and companion.BA2_DoorBroken then
+            BA2_RepairDoor(companion)
+        end
+    end
+
+    -- if ent.BA2_UsedEntityForProp ~= ent and IsValid(ent.BA2_UsedEntityForProp) then
+    --     ent.BA2_UsedEntityForProp:SetNoDraw(false)
+    --     ent.BA2_UsedEntityForProp:SetCollisionGroup(COLLISION_GROUP_NONE)
+    --     ent.BA2_UsedEntityForProp:SetSolid(SOLID_OBB)
+    -- end
+
+    -- SafeRemoveEntity(ent.BA2_PropDoor)
 end

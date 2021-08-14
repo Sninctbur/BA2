@@ -7,7 +7,7 @@ TOOL.AddToMenu = false
 function TOOL:LeftClick( trace )
     if IsValid(trace.Entity) and (string.StartWith(trace.Entity:GetClass(),"func_door") or string.StartWith(trace.Entity:GetClass(),"prop_door")) then
         if SERVER then
-            BA2_BreakDoor(trace.Entity, self:GetOwner():GetForward() * 5000)
+            BA2_BreakDoor(trace.Entity, self:GetOwner():GetForward())
         end
         return true
     end
