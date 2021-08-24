@@ -30,12 +30,12 @@ function ENT:Initialize()
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)
 		self:SetCollisionBounds(self:OBBMins(),self:OBBMaxs())
-		--self:SetSolid(SOLID_BBOX)
-		-- self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
-		-- self:SetMoveType(MOVETYPE_STEP)
-		-- self:SetCollisionGroup(COLLISION_GROUP_NPC)
+		self:SetSolid(SOLID_BBOX)
+		self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
+		--self:SetMoveType(MOVETYPE_STEP)
+		self:SetCollisionGroup(COLLISION_GROUP_NPC)
 		self:PhysicsInitStatic(SOLID_BBOX)
-		self:SetSolidMask(MASK_SOLID)
+		self:SetSolidMask(MASK_NPCSOLID)
 		self:SetFriction(0)
 		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
@@ -60,7 +60,7 @@ function ENT:Initialize()
 		timer.Simple(0,function()
 			if not IsValid(self) then return end
 
-			--self:GetPhysicsObject():SetMass(80)
+			self:GetPhysicsObject():SetMass(90)
 
 			-- if BA2_GetMaggotMode() then
 			-- 	self:SetModel("models/player/soldier.mdl")
@@ -73,6 +73,9 @@ function ENT:Initialize()
 			-- If you'd like to be chased by a horde of T-posing Soldiers this May, be my guest!
 
 			if #navmesh.GetAllNavAreas() == 0 then
+				for i,v in pairs(player.GetAll()) do
+					v:PrintMessage(HUD_PRINTCENTER,"This map doesn't have a navmesh!")
+				end
 				print("BA2: There is no navmesh! Despawning...")
 				self:Remove()
 			end
@@ -167,6 +170,17 @@ function ENT:IsValidEnemy(e)
 		or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive()) 
 		or (ent:IsNextBot() and !string.StartWith(ent:GetClass(),"nb_ba2_infected")))
 end
+function ENT:GetAllEnemies()
+	local list = {}
+
+	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius or 10000)) do
+		if self:IsValidEnemy(ent) and ent:GetMaterialType() ~= MAT_METAL then
+			table.insert(list,ent)
+		end
+	end
+
+	return list
+end
 function ENT:GetAttacking()
 	return self.BA2_Attacking
 end
@@ -192,6 +206,60 @@ end
 
 
 -- AI
+function ENT:ZombieNav(path)
+	return path:Compute(self,self.NavTarget,function( area, fromArea, ladder, elevator, length ) -- Mod of the default function because writing a pathfinding algorithm is the most horrific thing a programmer can do
+		if ( !IsValid( fromArea ) ) then
+			-- first area in path, no cost
+			return 0
+		
+		else
+		
+			if ( !self.loco:IsAreaTraversable( area ) ) then
+				-- our locomotor says we can't move here
+				return -1
+			end
+	
+			-- compute distance traveled along path so far
+			local dist = 0
+	
+			if ( IsValid( ladder ) ) then
+				dist = ladder:GetLength()
+			elseif ( length > 0 ) then
+				-- optimization to avoid recomputing length
+				dist = length
+			else
+				dist = ( area:GetCenter() - fromArea:GetCenter() ):GetLength()
+			end
+	
+			local cost = dist + fromArea:GetCostSoFar()
+	
+			-- check height change
+			local deltaZ = fromArea:ComputeAdjacentConnectionHeightChange( area )
+			if ( deltaZ >= self.loco:GetStepHeight() ) then
+				if ( deltaZ >= self.loco:GetMaxJumpHeight() ) then
+					-- too high to reach
+					return -1
+				end
+	
+				-- jumping is slower than flat ground
+				local jumpPenalty = 5
+				cost = cost + jumpPenalty * dist
+			elseif ( deltaZ < -self.loco:GetDeathDropHeight() ) then
+				-- too far to drop
+				return -1
+			end
+
+			if area:IsUnderwater() then
+				-- only kill ourselves in water as a last resort
+				cost = cost * 2
+			end
+	
+			return cost
+		end
+	end )
+end
+
+
 function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 	--self:EmitSound("groan")
 	if !self.noRise and self:WaterLevel() ~= 3 then
@@ -286,14 +354,14 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 			if self.NavTarget ~= nil then -- ChaseEnemy code robbed shamelessly from the wiki, because fuck reinventing the wheel
 				--self.loco:FaceTowards(self.NavTarget)
-				if path:GetAge() > .5 then
-					pathComplete = path:Compute( self, self.NavTarget )	-- Compute the path towards the enemies position
+				if path:GetAge() > 3 then
+					pathComplete = self:ZombieNav(path)	-- Compute the path towards the enemies position
 				end
 				--print(pathComplete)
 	
 				if pathComplete then
-					if ( path:GetAge() > 0.5 ) then					-- Since we are following the player we have to constantly remake the path
-						pathComplete = path:Compute(self, self.NavTarget) -- Compute the path towards the enemy's position again
+					if ( path:GetAge() > 0.5 ) then					-- Remake the path sooner if it's successful to keep up the chase
+						pathComplete = self:ZombieNav(path) -- Compute the path towards the enemy's position again
 					end							-- This function moves the bot along the path
 				elseif self:IsValidEnemy() then
 					--print(self:EntIndex(),"BA2: Pathfinding failed")
@@ -393,13 +461,11 @@ function ENT:SearchForEnemy()
 
 	local minEnt = nil
 	local minDist = math.huge
-	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius)) do
-		if self:IsValidEnemy(ent) and ent:GetMaterialType() ~= MAT_METAL then
-			local dist = ent:GetPos():Distance(self:GetPos())
-			if dist < minDist then
-				minEnt = ent
-				minDist = dist
-			end
+	for i,ent in pairs(self:GetAllEnemies()) do
+		local dist = ent:GetPos():Distance(self:GetPos())
+		if dist < minDist then
+			minEnt = ent
+			minDist = dist
 		end
 	end
 
@@ -413,6 +479,10 @@ function ENT:SearchForCorpse()
 
 	local minEnt = nil
 	local minDist = math.huge
+	if self.SearchRadius == nil then
+		self.SearchRadius = 10000
+	end
+	
 	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius / 4)) do
 		if ent:GetClass() == "prop_ragdoll" and ent:GetNoDraw() == false and ent:GetMaterialType() ~= MAT_METAL and !ent.BA2_ZomCorpse then
 			local dist = ent:GetPos():Distance(self:GetPos())

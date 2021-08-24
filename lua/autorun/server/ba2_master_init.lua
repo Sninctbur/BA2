@@ -16,6 +16,8 @@ CreateConVar("ba2_hs_interval",1,FCVAR_ARCHIVE,[[The Horde Spawner will wait thi
     The lower this is, the faster zombies will spawn.]],0.1)
 CreateConVar("ba2_hs_saferadius",500,FCVAR_ARCHIVE,[[The Horde Spawner cannot spawn zombies closer to potential targets than this distance.
     You may need to turn this value down on very small maps.]],0)
+CreateConVar("ba2_hs_maxradius",0,FCVAR_ARCHIVE,[[The Horde Spawner must spawn zombies within this distance of potential targets. Useful on very large maps.
+    Set to 0 for disable this limit.]],0)
 -- CreateConVar("ba2_hs_appearance",5,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
 --     0: Citizens
 --     1: Rebels
@@ -271,7 +273,7 @@ end
 function BA2_ToggleMaggotMode()
     if not IsMounted("tf") then
         print("Numbnuts! You need to mount Team Fortress 2!")
-    elseif os.date("%m") == "05" then
+    else
         if BA2_MaggotMode == nil then
             BA2_MaggotMode = true
             print("Maggot Mode activated! Booyah!")
@@ -279,8 +281,12 @@ function BA2_ToggleMaggotMode()
             BA2_MaggotMode = nil
             print("Maggot Mode is off! You have dishonored this entire unit.")
         end
-    else
-        print("Come back the month of May, hippie!")
+
+        if os.date("%m") == "05" then
+            print("You were good, son. Real good. Maybe even the best...")
+        end
+    -- else
+    --     print("Come back the month of May, hippie!")
     end
 end
 function BA2_GetMaggotMode()

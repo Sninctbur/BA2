@@ -82,19 +82,38 @@ function ENT:SpawnZoms(amnt)
             timer.Simple(i * .1,function() -- O P T I M I Z E D
                 if IsValid(self) and self.zoms ~= nil and #self.zoms < zomThreshold then
                     local navArea = self.navs[math.random(1,#self.navs)]
-                    while navArea:IsUnderwater() do
+                    while navArea:IsUnderwater() do -- Can't spawnkill our zombies
                         navArea = self.navs[math.random(1,#self.navs)]
                     end
                     
                     local spawnPos = navArea:GetCenter()
+                    local minDist = GetConVar("ba2_hs_saferadius"):GetInt()
 
                     local zom = ents.Create(zomTypes[math.random(1,#zomTypes)])
 
-                    for i,ent in pairs(ents.FindInSphere(spawnPos,GetConVar("ba2_hs_saferadius"):GetInt())) do
+                    for i,ent in pairs(ents.FindInSphere(spawnPos,minDist)) do
                         if zom:IsValidEnemy(ent) then
                             zom:Remove()
                             return
                         end
+                    end
+
+                    local maxDist = GetConVar("ba2_hs_maxradius"):GetInt()
+                    local isInRange = false
+                    if maxDist > 0 then
+                        maxDist = math.max(maxDist,minDist)
+                        for i,ent in pairs(ents.FindInSphere(spawnPos,maxDist)) do
+                            if zom:IsValidEnemy(ent) then
+                                isInRange = true
+                            end
+                        end
+                    else
+                        isInRange = true
+                    end
+
+                    if !isInRange then
+                        zom:Remove()
+                        return
                     end
 
                     zom:SetPos(spawnPos)
