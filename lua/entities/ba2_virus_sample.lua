@@ -46,6 +46,11 @@ function ENT:VialBreak(ent)
     util.Effect("BloodImpact",eff)
 
     for i,e in pairs(ents.FindInSphere(self:GetPos(),260)) do
+        if JMod_GetArmorBiologicalResistance ~= nil and e:IsPlayer() and JMod_GetArmorBiologicalResistance(e,DMG_NERVEGAS) > 0 then
+			JMod_DepleteArmorChemicalCharge(e,.0125)
+			continue
+		end
+        
         if BA2_GasmaskNpcs[e:GetClass()] or !BA2_GetActiveMask(e) then
             BA2_AddInfection(e,(65 - (self:GetPos():Distance(e:GetPos())) / 4))
         end

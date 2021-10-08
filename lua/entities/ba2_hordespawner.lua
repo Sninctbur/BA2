@@ -118,6 +118,7 @@ function ENT:SpawnZoms(amnt)
 
                     zom:SetPos(spawnPos)
                     zom.noRise = true
+                    zom.BA2_AutoSpawned = true
                     zom.SearchRadius = math.huge -- Can't have a horde if they don't actually chase people
                     zom:Spawn()
                     zom:Activate()

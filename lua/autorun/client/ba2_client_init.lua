@@ -25,7 +25,7 @@ function BA2_NoNavmeshWarn()
     lbl:SetWrap(true)
     lbl:SetText("Bio-Annihilation II’s zombies are Nextbots, and thus require a Navmesh to function. Unfortunately, the map you’ve just loaded doesn’t have a navmesh."
         .."\nBut that’s no problem! I, Zambo the Help Zombie, am here to help you fix this."
-        .."\n\nTo add a navmesh to this map, you have two simple options:"
+        .."\n\nTo add a navmesh to this map, the two simplest options are as follows:"
         .."\n• Some addons add a navmesh to specific maps. If you can find one for this map, install it and restart the server. It will work immediately!"
         .."\n• You can also generate the navmesh yourself. This process is straightforward, but can take time and may not work correctly depending on the map. I’ll walk you through it in the steps below."
         .."\n\n"
@@ -238,7 +238,6 @@ hook.Add("DrawOverlay","BA2_CameraSmog",function()
     end
 end)
 
-
 -- Q-menu options
 local adminString = "You must be a server admin to modify these settings. You're still allowed to look, though.\n"
 
@@ -398,12 +397,15 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Romero Mode","ba2_inf_romeromode")
         panel:ControlHelp("All dead players and NPCs raise as zombies, regardless of infection")
 
+        panel:NumSlider("Maximum Zombies","ba2_inf_maxzoms",0,100,0)
+        panel:ControlHelp("New zombies will not raise if there are this many zombies alive")
         panel:NumSlider("Contagion Radius","ba2_inf_contagionmult",0,10,2)
         panel:NumSlider("Player Infection","ba2_inf_plymult",0,10,2)
         panel:NumSlider("NPC Infection","ba2_inf_npcmult",0,10,2)
         panel:NumSlider("Infection Damage","ba2_inf_dmgmult",0,10,2)
-        panel:NumSlider("Maximum Zombies","ba2_inf_maxzoms",0,100,0)
         panel:ControlHelp("Set values to 0 to disable their respective features")
+
+        panel:Button("Delete Clouds and Air Waste","ba2_inf_deleteclouds")
     end)
 
     -- ZOMBIES
@@ -412,8 +414,10 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
             panel:ControlHelp(adminString)
         end
         panel:Help("You can type \"find ba2_zom\" in the developer console for more information about these settings.")
-        panel:Help("These settings change the attributes of zombies, allowing you to make them easier or harder to kill.")
+        panel:Help("These settings change the attributes of zombies, allowing you to change their behavior or make them easier or harder to kill.")
 
+        panel:CheckBox("Target Swapping","ba2_zom_retargeting")
+        panel:ControlHelp("May cause stuttering")
         panel:CheckBox("Stun by Damage","ba2_zom_damagestun")
         panel:CheckBox("Arm Damage/Disarming","ba2_zom_armdamage")
         panel:CheckBox("Leg Damage/Crippling","ba2_zom_legdamage")
@@ -466,6 +470,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:CheckBox("Air Waste Visuals","ba2_misc_airwastevisuals")
         panel:CheckBox("Air Waste View Shake","ba2_misc_airwasteshake")
+        panel:CheckBox("Gib Bloodstains","ba2_misc_gibdecals")
         panel:CheckBox("No Navmesh Warning","ba2_misc_navmeshwarn")
         panel:CheckBox("Zombie Kill Credit","ba2_misc_addscore")
 

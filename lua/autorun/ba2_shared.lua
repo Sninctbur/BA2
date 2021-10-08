@@ -112,7 +112,9 @@ BA2_ZombieTypes = {
 
 DMG_BIOVIRUS = 83598
 
-BA2_MODVERSION = "Release 2 Alpha"
+BA2_MODVERSION = "Release 2 Alpha C2"
+
+BA2_JMod = (JMod_GetArmorBiologicalResistance ~= nil)
 
 -- Sounds
 sound.Add({

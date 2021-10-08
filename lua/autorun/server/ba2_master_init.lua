@@ -49,6 +49,7 @@ CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise n
     More zombies means more difficulty - for both you and your machine.
     Set to 0 to enable expert mode: unlimited capacity.]],0)
 CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
+concommand.Add("ba2_inf_deleteclouds",BA2_DestroyClouds,nil,"Destroys all Contaminant Clouds on the map, as well as the Air Waste if it exists.")
 
 CreateConVar("ba2_zom_pursuitspeed",1,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
     0: Pacing speed ("*yawn* Let me get a drink...")
@@ -79,6 +80,11 @@ CreateConVar("ba2_zom_breakphys",1,FCVAR_ARCHIVE,[[If enabled, zombies can unfre
 CreateConVar("ba2_zom_breakdoors",1,FCVAR_ARCHIVE,[[If enabled, zombies can break down standard doors.]])
 CreateConVar("ba2_zom_doorrespawn",30,FCVAR_ARCHIVE,[[The time in seconds it takes for a door to respawn after getting broken down.
     If this value is zero or less, then the door will not respawn until the map is cleaned up.]],0)
+CreateConVar("ba2_zom_attackmode",0,FCVAR_ARCHIVE,[[Determines how zombies will attack their targets.
+    0: Grab
+    1: Claw]])
+CreateConVar("ba2_zom_retargeting",1,FCVAR_ARCHIVE,[[If enabled, zombies will periodically switch targets if another target is closer to them for enough time.
+This may cause stuttering, so it's recommended to disable this if you have performance issues with lots of zombies.]])
 
 CreateConVar("ba2_misc_corpselife",10,FCVAR_ARCHIVE,[[The amount of time before a zombie's corpse is cleaned up.
     Set to -1 for infinite lifetime.]],-1
@@ -91,10 +97,12 @@ CreateConVar("ba2_misc_deathdropmask",1,FCVAR_ARCHIVE,[[If enabled, players will
 CreateConVar("ba2_misc_deathdropfilter",1,FCVAR_ARCHIVE,[[If enabled, players will drop all of their gas mask filters on death.]])
 CreateConVar("ba2_misc_headshoteff",1,FCVAR_ARCHIVE,[[If enabled, zombies' heads have a chance to comically explode when they are killed by a headshot.]])
 CreateConVar("ba2_misc_addscore",1,FCVAR_ARCHIVE,[[If enabled, killing a zombie will award a frag to the player who killed them.]])
+CreateConVar("ba2_misc_gibdecals",1,FCVAR_ARCHIVE,[[If enabled, zombie gibs will leave lovely bloodstains on any surface they fall onto.]])
 -- CreateConVar("ba2_misc_isnpc",0,FCVAR_ARCHIVE,[[If enabled, other addons will consider zombies an NPC for the purpose of IsNPC() checks.
 --     Enabling this may correct interactions with some addons (for example, JMod), but can cause Lua errors in others. Enable at your own risk.]])
 
 concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
+CreateConVar("ba2_misc_kidsmode",0,FCVAR_ARCHIVE,[[If enabled, this mod will become less appalling to the ESRB.]])
 
 concommand.Add("ba2_gasmask",BA2_ToggleGasmask,nil)
 concommand.Add("ba2_dgasmask",BA2_DropGasmask,nil)
@@ -141,23 +149,28 @@ function BA2_InfectionTick(ent)
             if ent.BA2Infection == nil then return end
 
             if IsValid(ent) and GetConVar("ba2_inf_contagionmult"):GetFloat() > 0 and !BA2_GetActiveMask(ent) then
+                if BA2_JMod and ent:IsPlayer() and JMod_GetArmorBiologicalResistance(ent,DMG_NERVEGAS) > 0 then
+                    return
+                end
+                
                 for i,e in pairs(ents.FindInSphere(ent:GetPos(),100 * GetConVar("ba2_inf_contagionmult"):GetFloat())) do
-                    if e ~= ent and !BA2_GetActiveMask(ent) and !(ent:IsNPC() and e:IsPlayer() and GetConVar("ai_ignoreplayers"):GetBool()) then
-                        if e.BA2Infection == nil then
-                            e.BA2Infection = 1
-                        elseif e.BA2Infection < ent.BA2Infection then
-                            BA2_AddInfection(e,ent.BA2Infection / math.random(4,8))
-                        end
+                    if BA2_JMod and e:IsPlayer() and JMod_GetArmorBiologicalResistance(e,DMG_NERVEGAS) > 0 then
+                        continue
+                    end
+
+                    if e ~= ent and !BA2_GetActiveMask(e) and !(ent:IsNPC() and e:IsPlayer() and GetConVar("ai_ignoreplayers"):GetBool())
+                    and (e.BA2Infection == nil or e.BA2Infection < ent.BA2Infection) then
+                        BA2_AddInfection(e,ent.BA2Infection / math.random(4,8))
                     end
                 end
             end
             
             if math.random(1,2) == 1 then
-                ent:EmitSound("ba2_infectdamage")
+                ent:EmitSound("ba2_infectdamage",75,100,1,CHAN_VOICE)
             end
             if ent.BA2Infection * 3 > ent:Health() then
                 --ent:SetColor(BA2_GetDefaultColor())
-                ent:EmitSound("ba2_infectcry")
+                ent:EmitSound("ba2_infectcry",75,100,1,CHAN_VOICE)
             -- elseif ent:GetColor() == BA2_GetDefaultColor() then
             --     ent:SetColor(Color(255,255,255))
             end
@@ -174,7 +187,8 @@ function BA2_InfectionDeath(ent,inflict,killer,dmg)
     if string.StartWith(ent:GetClass(),"nb_ba2_infected") then return end
 
     if GetConVar("ba2_inf_romeromode"):GetBool() or (!GetConVar("ba2_inf_killtoraise"):GetBool() and ent.BA2Infection > 0)
-         or inflict == BA2_InfectionManager() or (dmg ~= nil and dmg:GetDamageCustom() == DMG_BIOVIRUS) or (IsValid(killer) and string.StartWith(killer:GetClass(),"nb_ba2_infected")) then
+         or inflict == BA2_InfectionManager() or (dmg ~= nil and dmg:GetDamageCustom() == DMG_BIOVIRUS)
+         or (IsValid(killer) and string.StartWith(killer:GetClass(),"nb_ba2_infected")) then
         local riseTime = GetConVar("ba2_zom_emergetime"):GetFloat()
 
         if riseTime == 0 then
@@ -303,6 +317,18 @@ function BA2_DestroyHS()
     end
 end
 
+function BA2_DestroyClouds()
+    local hs = ents.FindByClass("ba2_airwaste")
+    if #hs >= 1 then
+        hs[1]:Remove()
+    end
+    for i,c in pairs(ents.FindByClass("ba2_virus_cloud")) do
+        c:Remove()
+    end
+
+    print("BA2: Clouds removed by console")
+end
+
 
 function BA2_ToggleGasmask(p)
     if p:GetNWBool("BA2_GasmaskOwned",false) then
@@ -394,13 +420,6 @@ function BA2_UFilter(p)
 
         p:EmitSound("physics/metal/weapon_footstep1.wav")
         p:ViewPunch(Angle(10,0,0))
-    end
-end
-function BA2_GetActiveMask(p)
-    if p:IsPlayer() then
-        return p:GetNWBool("BA2_GasmaskOn",false) and (!GetConVar("ba2_misc_maskfilters"):GetBool() or p:GetNWInt("BA2_GasmaskFilterPct",0) > 0)
-    elseif p:IsNPC() then
-        return BA2_GasmaskNpcs[p:GetClass()]
     end
 end
 
@@ -521,8 +540,8 @@ end)
 
 hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent,dmg)
     if inf ~= nil and GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
-        or (IsValid(p) and p.BA2Infection > 0) 
-        or inf:GetClass() == BA2_InfectionManager()) then
+     or (IsValid(p) and p.BA2Infection > 0) 
+     or inf:GetClass() == BA2_InfectionManager()) then
         BA2_InfectionDeath(p,inf,ent,dmg)
     end
 
@@ -544,6 +563,16 @@ hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent,dmg)
     end
 end)
 
+hook.Add("OnNPCKilled","BA2_NPCDeath",function(npc)
+    if npc.BA2_MaskCitizen == true then
+        local mask = ents.Create("ba2_gasmask")
+        mask.BA2_FilterPct = math.random(55,95)
+        mask:SetPos(npc:EyePos())
+        mask:Spawn()
+        mask:Activate()
+    end
+end)
+
 hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
     if e:IsPlayer() and e:GetNWBool("BA2_GasmaskOn",false) and dmg:GetDamage() < e:Health() and dmg:GetDamage() * math.random(0,20) / 10 >= e:Health() / 4  then
         BA2_GasmaskSound(e)
@@ -552,8 +581,9 @@ hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
 
     if e:Health() <= 0 then return end
     if (GetConVar("ba2_inf_romeromode"):GetBool() or dmg:GetInflictor() == BA2_InfectionManager() or dmg:GetDamageCustom() == DMG_BIOVIRUS
-        or (e.BA2Infection and e.BA2Infection > 0 and !GetConVar("ba2_inf_killtoraise"):GetBool())) 
-        and (e:IsNPC() or e:IsPlayer()) and e:Health() <= dmg:GetDamage() then
+     or (e.BA2Infection and e.BA2Infection > 0 and !GetConVar("ba2_inf_killtoraise"):GetBool())) 
+     and (e:IsNPC() or e:IsPlayer()) and e:Health() <= dmg:GetDamage() then
+        if string.StartWith(dmg:GetAttacker():GetClass(),"nb_ba2_infected") and (!e.BA2Infection or e.BA2Infection == 0) then return end -- hardcoding this because fuck logic
         if e:IsPlayer() and GetConVar("ba2_inf_plyraise"):GetBool() then
             gamemode.Call("PlayerDeath",e,dmg:GetInflictor(),dmg:GetAttacker(),dmg)
             e:KillSilent()
@@ -569,6 +599,12 @@ hook.Add("EntityTakeDamage","BA2_OnDamage",function(e,dmg)
     end
 end)
 
+hook.Add("EntityEmitSound","BA2_GasmaskMuffle",function(info)
+    if info.Entity:GetNWBool("BA2_GasmaskOn",false) and info.Channel == CHAN_VOICE then
+        info.DSP = 30 -- Low pass filter
+        return true
+    end
+end)
 
 hook.Add("PlayerSay","BA2_Chat",function(p,msg)
     if !p:Alive() then return end
@@ -599,7 +635,7 @@ hook.Add("PlayerSpawn","BA2_PlayerSpawn",function(p)
 end)
 
 hook.Add("PostGamemodeLoaded","BA2_NavmeshWarn",function()
-    timer.Simple(2,function()
+    timer.Simple(5,function()
         if GetConVar("ba2_misc_navmeshwarn"):GetBool() and #navmesh.GetAllNavAreas() == 0 then
             net.Start("BA2NoNavmeshWarn")
             net.Send(Entity(1))

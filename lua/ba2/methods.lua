@@ -33,13 +33,13 @@ function BA2_AddInfection(ent,amnt)
     if ent:IsPlayer() and !ent:Alive() then return end
     if (ent:IsNPC() and (BA2_ConvertibleNpcs[ent:GetClass()] == nil and ent.IsVJBaseSNPC_Human ~= true)) then return end
     
-    amnt = math.floor(amnt)
     if ent:IsPlayer() then
         amnt = amnt * GetConVar("ba2_inf_plymult"):GetFloat()
     elseif ent:IsNPC() then
         amnt = amnt * GetConVar("ba2_inf_npcmult"):GetFloat()
     end
 
+    amnt = math.floor(amnt)
     if amnt == 0 then return end
 
     if ent.BA2Infection == nil then
@@ -49,6 +49,17 @@ function BA2_AddInfection(ent,amnt)
     end
 end
 
+function BA2_CanConvert(ent)
+    return (ent:IsPlayer() or BA2_ConvertibleNpcs[ent:GetClass()])
+end
+
+function BA2_GetActiveMask(p)
+    if p:IsPlayer() then
+        return p:GetNWBool("BA2_GasmaskOn",false) and (!GetConVar("ba2_misc_maskfilters"):GetBool() or p:GetNWInt("BA2_GasmaskFilterPct",0) > 0)
+    elseif p:IsNPC() then
+        return p:GetNWBool("BA2_GasmaskOn",false) or BA2_GasmaskNpcs[p:GetClass()]
+    end
+end
 
 function BA2_InfectionManager()
     if not IsValid(BA2_InfManager) then

@@ -21,6 +21,8 @@ function ENT:Initialize()
 	self.BA2_LLegDamage = 0
 	self.BA2_RLegDamage = 0
 	self.BA2_SpeedMult = math.random(90,100) / 100
+	self.BA2_TimeToNextScan = 0
+	self.BA2_CreationTime = CurTime()
 	--self.InfBody = "models/Humans/Group01/male_02.mdl"
 
 	if SERVER then
@@ -154,7 +156,6 @@ function ENT:Initialize()
 			end
 		end)
 	end
-	--self:CallOnRemove("KillSounds",function() self:KillSounds() end)
 end
 
 -- Getters and setters
@@ -249,7 +250,7 @@ function ENT:ZombieNav(path)
 				return -1
 			end
 
-			if area:IsUnderwater() then
+			if area:IsUnderwater() and (self.Enemy == nil or self.Enemy:WaterLevel() < 2) then
 				-- only kill ourselves in water as a last resort
 				cost = cost * 2
 			end
@@ -409,11 +410,15 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 						debugoverlay.Line(tr.StartPos,tr.HitPos,.1)
 					end
 
-					if GetConVar("ba2_zom_breakobjects"):GetBool() and tr ~= nil and tr.Hit and tr2.Hit and not traceEnts[tr2.Hit] and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
+					if GetConVar("ba2_zom_breakobjects"):GetBool() and tr ~= nil and tr.Hit and tr2.Hit and !traceEnts[tr2.Hit] and !self:VisibleVec(self:GetEnemy():GetPos()) and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
 						self:ZombieSmash(tr.Entity)
 					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) < 60 and self:VisibleVec(self:GetEnemy():GetPos()) and !(self:GetEnemy():IsPlayer() and self:GetEnemy():InVehicle()) then
 						self:ZombieAttack()
 					end
+				end
+
+				if GetConVar("ba2_zom_retargeting"):GetBool() and CurTime() >= self.BA2_TimeToNextScan then
+					self:SearchForEnemy()
 				end
 			end
 		end
@@ -445,6 +450,7 @@ end
 
 function ENT:SearchForEnemy()
 	-- Don't bother looking for enemies if there are no enemies in the first place
+	self.BA2_TimeToNextScan = CurTime() + math.random(10,20) / 10
 	if #ents.FindByClass("npc_*") == 0 then
 		if GetConVar("ai_ignoreplayers"):GetBool() then return
 		else
@@ -503,6 +509,11 @@ function ENT:HandleStuck()
 	--print(self:EntIndex(),"BA2: Handling stuck")
 	self.loco:ClearStuck()
 
+	if self.BA2_AutoSpawned and self.BA2_CreationTime < CurTime() - 2 then
+		self:Remove()
+		return
+	end
+
 	if self:IsValidEnemy() then
 		self:PursuitSpeed()
 	else
@@ -546,6 +557,7 @@ function ENT:ZombieAttack()
 
 	local enemy = self:GetEnemy()
 	local dmgMult = GetConVar("ba2_zom_dmgmult"):GetFloat()
+	local attackMode = GetConVar("ba2_zom_attackmode"):GetInt()
 
 	if !(self.BA2_LArmDown and self.BA2_RArmDown) then
 		self:EmitSound("physics/flesh/flesh_impact_hard"..math.random(1,6)..".wav")
@@ -638,7 +650,7 @@ function ENT:ZombieSmash(ent)
 					propDmg = propDmg * 0.5
 				end
 
-				if ent:GetClass() == "prop_door_rotating" then
+				if ent:GetClass() == "prop_door_rotating" or ent:GetClass() == "func_door_rotating" then
 					if ent.BA2_DoorHealth == nil then
 						ent.BA2_DoorHealth = 200 - propDmg
 					elseif ent.BA2_DoorHealth <= 0 then
@@ -651,36 +663,43 @@ function ENT:ZombieSmash(ent)
 					if ent.BA2_DoorHealth <= 0 then
 						ent:EmitSound("ambient/materials/door_hit1.wav")
 
-						local prop = ents.Create("prop_physics")
-						prop:SetModel(ent:GetModel())
-						prop:SetSkin(ent:GetSkin())
-						prop:SetBodygroup(0,ent:GetBodygroup(0))
-						prop:SetPos(ent:GetPos())
-						prop:SetAngles(ent:GetAngles())
-						prop:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
-						prop:SetSolid(SOLID_NONE)
+						if ent:GetClass() == "prop_door_rotating" then
+							local prop = ents.Create("prop_physics")
+							prop:SetModel(ent:GetModel())
+							prop:SetSkin(ent:GetSkin())
+							prop:SetBodygroup(0,ent:GetBodygroup(0))
+							prop:SetPos(ent:GetPos())
+							prop:SetAngles(ent:GetAngles())
+							prop:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+							prop:SetSolid(SOLID_NONE)
 
-						prop:Spawn()
-						prop:Activate()
-						prop:GetPhysicsObject():ApplyForceCenter(self:GetForward() * 5000)
+							prop:Spawn()
+							prop:Activate()
+							prop:GetPhysicsObject():ApplyForceCenter(self:GetForward() * 5000)
 
-						if IsValid(ent) then
-							ent:SetNoDraw(true)
-							ent:SetSolid(SOLID_NONE)
-						end
+							if IsValid(ent) then
+								ent:SetNoDraw(true)
+								ent:SetSolid(SOLID_NONE)
+							end
 
-						local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
-						if doorRespawn > 0 then
-							timer.Simple(doorRespawn,function()
-								if IsValid(ent) then
-									ent:SetNoDraw(false)
-									ent:SetCollisionGroup(COLLISION_GROUP_NONE)
-									ent:SetSolid(SOLID_OBB)
-									ent.BA2_DoorHealth = 200
-								end
+							local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
+							if doorRespawn > 0 then
+								timer.Simple(doorRespawn,function()
+									if IsValid(ent) then
+										ent:SetNoDraw(false)
+										ent:SetCollisionGroup(COLLISION_GROUP_NONE)
+										ent:SetSolid(SOLID_OBB)
+										ent.BA2_DoorHealth = 200
+									end
 
-								SafeRemoveEntity(prop)
-							end)
+									SafeRemoveEntity(prop)
+								end)
+							end
+						else
+							ent:Fire("SetSpeed",ent:GetInternalVariable("Speed") * 2.5)
+							ent:Fire("Open")
+							ent:Fire("SetSpeed",ent:GetInternalVariable("Speed"))
+							ent.BA2_DoorHealth = 200
 						end
 					elseif math.random(1,100) >= ent.BA2_DoorHealth then
 						ent:EmitSound("physics/wood/wood_strain"..math.random(2,4)..".wav")
@@ -888,7 +907,7 @@ end
 
 function ENT:OnTraceAttack(dmginfo,dir,trace)
 	if trace.HitGroup == HITGROUP_HEAD then
-		dmginfo:SetDamage(dmginfo:GetDamage() * 4)
+		dmginfo:SetDamage(dmginfo:GetDamage() * 3)
 
 		if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmginfo:GetDamage() > self:Health() then
 			dmginfo:SetDamage(dmginfo:GetDamage() * 2)
