@@ -34,12 +34,12 @@ ENT.InfBody = {
     "models/humans/group02/female_03.mdl",
     "models/humans/group02/female_04.mdl",
     "models/humans/group02/female_06.mdl",
-    "models/humans/group02/female_07.mdl",
-    "models/Humans/Group01/Male_Cheaple.mdl"
+    "models/humans/group02/female_07.mdl"
 }
 
 ENT.InfBodyGroups = {}
 ENT.noRise = true
+ENT.cheapleEgg = true
 
 list.Set( "NPC", "nb_ba2_infected_citizen", {
     Name = "Infected Citizen",

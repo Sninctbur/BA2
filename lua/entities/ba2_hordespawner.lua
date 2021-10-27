@@ -32,6 +32,7 @@ function ENT:Initialize()
     self.zoms = {}
     if SERVER then
         self.navs = navmesh.GetAllNavAreas() 
+
         self:SpawnZoms(math.random(5,10))
         timer.Create("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),0,function()
             if IsValid(self) then
@@ -75,46 +76,58 @@ function ENT:SpawnZoms(amnt)
     --     zomType = BA2_ZombieTypes[zomType]
     -- end
 
-    local zomTypes = BA2_GetValidAppearances()
+    local zomTypes = {}
+    if GetConVar("ba2_hs_combine_chance"):GetFloat() / 100 > math.random() then
+        zomTypes = {"nb_ba2_infected_combine"}
+    elseif GetConVar("ba2_hs_carmor_chance"):GetFloat() / 100 > math.random() then
+        zomTypes = {"nb_ba2_infected_custom_armored"}
+    else
+        zomTypes = BA2_GetValidAppearances()
+    end
 
     if SERVER then
         for i = 1,amnt do
-            timer.Simple(i * .1,function() -- O P T I M I Z E D
+            timer.Simple(i * .2,function() -- O P T I M I Z E D
                 if IsValid(self) and self.zoms ~= nil and #self.zoms < zomThreshold then
-                    local navArea = self.navs[math.random(1,#self.navs)]
+                    local maxDist = GetConVar("ba2_hs_maxradius"):GetInt()
+                    local minDist = GetConVar("ba2_hs_saferadius"):GetInt()
+                    local validNavs = {}
+                    if maxDist > 0 or minDist > 0 then
+                        if maxDist == 0 then
+                            maxDist = math.huge
+                        end
+                        local navsInRange = {}
+                        local spawnEnts = ents.FindByClass("npc_*")
+                        if !GetConVar("ai_ignoreplayers"):GetBool() then
+                            table.Add(spawnEnts,player.GetAll())
+                        end
+
+                        for i,nav in pairs(self.navs) do
+                            for i,ent in pairs(spawnEnts) do
+                                local dist = nav:GetCenter():Distance(ent:GetPos())
+                                if dist <= maxDist and dist > minDist then
+                                    table.insert(navsInRange,nav)
+                                end
+                            end
+                        end
+
+                        validNavs = navsInRange
+                    else
+                        validNavs = self.navs
+                    end
+                    local navArea = validNavs[math.random(1,#validNavs)]
+                    if navArea == nil then
+                        print("BA2: No valid nav areas to spawn in!")
+                        return
+                    end
+
                     while navArea:IsUnderwater() do -- Can't spawnkill our zombies
                         navArea = self.navs[math.random(1,#self.navs)]
                     end
                     
                     local spawnPos = navArea:GetCenter()
-                    local minDist = GetConVar("ba2_hs_saferadius"):GetInt()
 
                     local zom = ents.Create(zomTypes[math.random(1,#zomTypes)])
-
-                    for i,ent in pairs(ents.FindInSphere(spawnPos,minDist)) do
-                        if zom:IsValidEnemy(ent) then
-                            zom:Remove()
-                            return
-                        end
-                    end
-
-                    local maxDist = GetConVar("ba2_hs_maxradius"):GetInt()
-                    local isInRange = false
-                    if maxDist > 0 then
-                        maxDist = math.max(maxDist,minDist)
-                        for i,ent in pairs(ents.FindInSphere(spawnPos,maxDist)) do
-                            if zom:IsValidEnemy(ent) then
-                                isInRange = true
-                            end
-                        end
-                    else
-                        isInRange = true
-                    end
-
-                    if !isInRange then
-                        zom:Remove()
-                        return
-                    end
 
                     zom:SetPos(spawnPos)
                     zom.noRise = true

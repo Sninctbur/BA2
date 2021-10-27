@@ -17,6 +17,13 @@ function BA2_GetValidAppearances()
         table.insert(zomTypes,BA2_ZombieTypes[3])
     end -- there's probably a shorter way to do this
 
+    -- if GetConVar("ba2_hs_combine_chance"):GetInt() > math.random() then
+    --     table.insert(zomTypes,BA2_ZombieTypes[4])
+    -- end
+    -- if GetConVar("ba2_hs_carmor_chance"):GetInt() > math.random() then
+    --     table.insert(zomTypes,BA2_ZombieTypes[5])
+    -- end
+
     if #zomTypes == 0 then
         zomTypes = table.Copy(BA2_ZombieTypes)
     end

@@ -37,7 +37,14 @@ function ENT:OnRemove()
 end
 
 function SpawnZom(s) -- This is just a neutered Horde Spawner
-    local zomTypes = BA2_GetValidAppearances()
+    local zomTypes = {}
+    if GetConVar("ba2_hs_combine_chance"):GetFloat() / 100 > math.random() then
+        zomTypes = {"nb_ba2_infected_combine"}
+    elseif GetConVar("ba2_hs_carmor_chance"):GetFloat() / 100 > math.random() then
+        zomTypes = {"nb_ba2_infected_custom_armored"}
+    else
+        zomTypes = BA2_GetValidAppearances()
+    end
 
     if SERVER then
         local zom = ents.Create(zomTypes[math.random(1,#zomTypes)])

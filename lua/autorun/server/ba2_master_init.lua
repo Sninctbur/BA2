@@ -15,9 +15,9 @@ CreateConVar("ba2_hs_max",40,FCVAR_ARCHIVE,[[The maximum number of Horde Spawner
 CreateConVar("ba2_hs_interval",1,FCVAR_ARCHIVE,[[The Horde Spawner will wait this long before spawning a new group of zombies.
     The lower this is, the faster zombies will spawn.]],0.1)
 CreateConVar("ba2_hs_saferadius",500,FCVAR_ARCHIVE,[[The Horde Spawner cannot spawn zombies closer to potential targets than this distance.
-    You may need to turn this value down on very small maps.]],0)
-CreateConVar("ba2_hs_maxradius",0,FCVAR_ARCHIVE,[[The Horde Spawner must spawn zombies within this distance of potential targets. Useful on very large maps.
-    Set to 0 for disable this limit.]],0)
+    You may need to decrease this value down on very small maps.]],0)
+CreateConVar("ba2_hs_maxradius",0,FCVAR_ARCHIVE,[[If above 0, the Horde Spawner must spawn zombies within this distance of potential targets.
+    Useful on very large maps, but may cause extra lag during spawning.]],0)
 -- CreateConVar("ba2_hs_appearance",5,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
 --     0: Citizens
 --     1: Rebels
@@ -28,11 +28,13 @@ CreateConVar("ba2_hs_maxradius",0,FCVAR_ARCHIVE,[[The Horde Spawner must spawn z
 -- )
 CreateConVar("ba2_hs_appearance_0",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Citizens.]])
 CreateConVar("ba2_hs_appearance_1",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Rebels.]])
-CreateConVar("ba2_hs_appearance_2",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Combine.]])
+CreateConVar("ba2_hs_appearance_2",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Metrocops.]])
 CreateConVar("ba2_hs_appearance_3",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Custom Infected.]])
+CreateConVar("ba2_hs_combine_chance",10,FCVAR_ARCHIVE,[[The chance for Spawners to spawn armored Infected Combine.]],0,100)
+CreateConVar("ba2_hs_carmor_chance",0,FCVAR_ARCHIVE,[[The chance for Spawners to spawn Custom Armored Infected.]],0,100)
 CreateConVar("ba2_hs_cleanup",1,FCVAR_ARCHIVE,[[If enabled, Spawners will also remove all of the zombies it created when it gets deleted.]])
 concommand.Add("ba2_hs_delete",BA2_DestroyHS,nil,"Destroys the active Horde Spawner, if it exists.")
-CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually replace zombies who do not find a target within 6 sceonds of spawning.]])
+CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually replace zombies who do not find a target within 6 seconds of spawning.]])
 
 CreateConVar("ba2_inf_contagionmult",1,FCVAR_ARCHIVE,[[Mutliply the distance the Bio-Virus can spread to others by this amount.
     Set to 0 to disable contagion.]],0)

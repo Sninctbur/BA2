@@ -362,6 +362,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Clean Up Targetless Zombies","ba2_hs_notargetclean")
         panel:NumSlider("Maximum Zombies","ba2_hs_max",1,100,0)
         panel:NumSlider("Spawn Interval","ba2_hs_interval",0.1,30,1)
+        panel:NumSlider("Maximum Radius","ba2_hs_maxradius",0,10000,0)
         panel:NumSlider("Safe Radius","ba2_hs_saferadius",0,10000,0)
 
         -- local comboBox = panel:ComboBox("Zombie Appearance","ba2_hs_appearance")
@@ -375,10 +376,12 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:Help("Appearance:")
         panel:CheckBox("Citizen","ba2_hs_appearance_0")
         panel:CheckBox("Rebel","ba2_hs_appearance_1")
-        panel:CheckBox("Combine","ba2_hs_appearance_2")
+        panel:CheckBox("Metrocop","ba2_hs_appearance_2")
         panel:CheckBox("Custom","ba2_hs_appearance_3")
+        panel:NumSlider("Combine Chance","ba2_hs_combine_chance",0,100)
+        panel:NumSlider("Custom Armored Chance","ba2_hs_carmor_chance",0,100)
 
-        panel:Button("Delete Active Horde Spawner","ba2_hs_delete")
+        panel:Button("Delete Active Horde Spawner","ba2_hs_delete","")
     end)
 
     -- INFECTION

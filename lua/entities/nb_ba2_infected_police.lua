@@ -5,8 +5,7 @@ ENT.Base = "nb_ba2_infected"
 ENT.Spawnable = false
 
 ENT.InfBody = {
-    "models/Combine_Soldier.mdl",
-    "models/Combine_Super_Soldier.mdl"
+    "models/Police.mdl"
 }
 
 ENT.InfVoice = 2 -- combine muttering
@@ -14,10 +13,9 @@ ENT.InfVoice = 2 -- combine muttering
 
 ENT.InfBodyGroups = {}
 ENT.noRise = true
-ENT.BA2_ArmoredZom = true
 
-list.Set( "NPC", "nb_ba2_infected_combine", {
-    Name = "Infected Combine",
-    Class = "nb_ba2_infected_combine",
+list.Set( "NPC", "nb_ba2_infected_police", {
+    Name = "Infected Metro Police",
+    Class = "nb_ba2_infected_police",
     Category = "Bio-Annihilation II"
 })

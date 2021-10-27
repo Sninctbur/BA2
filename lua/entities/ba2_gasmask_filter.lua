@@ -8,7 +8,7 @@ ENT.Spawnable = true
 
 function ENT:Initialize()
     self:SetModel("models/props_phx/wheels/drugster_front.mdl")
-    self:SetModelScale( self:GetModelScale() * 0.25, 0 )
+    self:SetModelScale(0.25)
 
     if SERVER then
         self:PhysicsInit(SOLID_VPHYSICS)
@@ -32,4 +32,8 @@ function ENT:Use(p)
         self:EmitSound("items/gunpickup2.wav")
         self:Remove()
     end
+end
+
+function ENT:Think()
+    self:SetModelScale(.25)
 end

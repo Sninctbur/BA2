@@ -82,13 +82,17 @@ function ENT:Initialize()
 				self:Remove()
 			end
 
-			if self.InfBody == "CUSTOM" then
-				local tbl = BA2_GetCustomInfs()
-				if #tbl == 0 then
-					tbl = BA2_ReloadCustoms()
+			if self.InfBody == "CUSTOM" or self.InfBody == "CUSTOM_ARM" then
+				local tbl1,tbl2 = BA2_GetCustomInfs()
+				if #tbl1 == 0 or #tbl2 == 0 then
+					tbl1,tbl2 = BA2_ReloadCustoms()
 				end
 
-				self.InfBody = tbl[math.random(#tbl)]
+				if self.InfBody == "CUSTOM" then
+					self.InfBody = tbl1[math.random(#tbl1)]
+				else
+					self.InfBody = tbl2[math.random(#tbl2)]
+				end
 
 				if !GetConVar("ba2_cos_tint"):GetBool() then
 					self.ColorOverride = Color(255,255,255)
@@ -97,7 +101,9 @@ function ENT:Initialize()
 
 			if self.InfBody ~= nil then
 				local model
-				if istable(self.InfBody) then
+				if self.cheapleEgg and math.random(1,100) <= 1 then
+					model = "models/Humans/Group01/Male_Cheaple.mdl"
+				elseif istable(self.InfBody) then
 					model = self.InfBody[math.random(1,#self.InfBody)]
 				else
 					model = self.InfBody
@@ -149,6 +155,10 @@ function ENT:Initialize()
 					
 				-- 	eff:AddEffects(EF_BONEMERGE)
 				-- end
+
+				if self.BA2_ArmoredZom then
+					self.BA2_SpeedMult = self.BA2_SpeedMult * .9
+				end
 
 			else
 				print("BA2: Zombie spawned with no model! Despawning...")
@@ -299,14 +309,16 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 			self.loco:SetVelocity(Vector(0,0,-5))
 
-			if self:Health() <= 20 then
+			local dmgVal = math.random(15,25)
+
+			if self:Health() <= dmgVal then
 				self:EmitSound("player/pl_drown1.wav")
 			else
 				self:EmitSound("player/pl_drown"..math.random(2,3)..".wav")
 			end
 
 			local dmg = DamageInfo()
-			dmg:SetDamage(math.random(15,25))
+			dmg:SetDamage(dmgVal)
 			dmg:SetDamageType(DMG_DROWN)
 			dmg:SetInflictor(game.GetWorld())
 			self:TakeDamageInfo(dmg)
@@ -320,7 +332,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 				self:PursuitSpeed()
 
 				--self:ChaseEnemy()
-				self.NavTarget = self:GetEnemy():GetPos()
+				self.NavTarget = self:GetEnemy():GetPos() -- + (self:GetEnemy():GetVelocity() - (self:GetPos() - self:EyePos())) still working on this vector math
 			elseif self:GetEnemy() ~= nil and !self:IsValidEnemy() then
 				self:SetEnemy(nil)
 				self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
@@ -329,7 +341,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 				local corpse = self:SearchForCorpse()
 				local corpsePos = corpse:GetPos()
 
-				if self:GetPos():Distance(corpsePos) <= 50 then
+				if self:GetPos():DistToSqr(corpsePos) <= 2500 then
 					self:ZombieEat(corpse)
 				else
 					self:SwitchActivity( ACT_WALK )			-- Walk anmimation
@@ -355,13 +367,15 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 			if self.NavTarget ~= nil then -- ChaseEnemy code robbed shamelessly from the wiki, because fuck reinventing the wheel
 				--self.loco:FaceTowards(self.NavTarget)
-				if path:GetAge() > 3 then
+				local distToTarget = self:GetPos():Distance(self.NavTarget)
+
+				if path:GetAge() > math.Clamp(distToTarget / 1000,3,10) then
 					pathComplete = self:ZombieNav(path)	-- Compute the path towards the enemies position
 				end
 				--print(pathComplete)
 	
 				if pathComplete then
-					if ( path:GetAge() > 0.5 ) then					-- Remake the path sooner if it's successful to keep up the chase
+					if path:GetAge() > 0.5 and (distToTarget < 1000) then -- Remake the path sooner if it's successful to keep up the chase
 						pathComplete = self:ZombieNav(path) -- Compute the path towards the enemy's position again
 					end							-- This function moves the bot along the path
 				elseif self:IsValidEnemy() then
@@ -412,8 +426,12 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 					if GetConVar("ba2_zom_breakobjects"):GetBool() and tr ~= nil and tr.Hit and tr2.Hit and !traceEnts[tr2.Hit] and !self:VisibleVec(self:GetEnemy():GetPos()) and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
 						self:ZombieSmash(tr.Entity)
-					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) < 60 and self:VisibleVec(self:GetEnemy():GetPos()) and !(self:GetEnemy():IsPlayer() and self:GetEnemy():InVehicle()) then
-						self:ZombieAttack()
+					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) < 40 and self:VisibleVec(self:GetEnemy():GetPos()) and !(self:GetEnemy():IsPlayer() and self:GetEnemy():InVehicle()) then
+						if GetConVar("ba2_zom_attackmode"):GetBool() then
+							self:ZombieAttackAlt(self:GetEnemy())
+						else
+							self:ZombieAttack()
+						end
 					end
 				end
 
@@ -564,10 +582,15 @@ function ENT:ZombieAttack()
 		BA2_ZombieGrab(self,enemy)
 	end
 
+	local breakDist = 60
+	if self.BA2_LArmDown or self.BA2_RArmDown then
+		breakDist = 40
+	end
+
 	while self:IsValidEnemy() and self:GetAttacking() do
 		coroutine.wait(.5)
 		if not self:IsValidEnemy() or not self:GetAttacking() then break end
-		if enemy:GetPos():Distance(self:GetPos()) > 60 then break end
+		if enemy:GetPos():Distance(self:GetPos()) > breakDist then break end
 		self.loco:FaceTowards(enemy:GetPos())
 
 		BA2_AddInfection(enemy,math.random(1,7) * GetConVar("ba2_zom_infectionmult"):GetFloat())
@@ -595,10 +618,68 @@ function ENT:ZombieAttack()
 	end
 
 	self:SetAttacking(false)
-	if self:IsValidEnemy() and enemy:GetPos():Distance(self:GetPos()) > 60 then
+	if self:IsValidEnemy() and enemy:GetPos():Distance(self:GetPos()) > breakDist then
 		self:EmitSound("physics/body/body_medium_impact_soft"..math.random(1,7)..".wav")
 		self:ZombieStun()
 	end
+end
+
+function ENT:ZombieAttackAlt(ent)
+	self.loco:FaceTowards(ent:GetPos())
+	self:SetAttacking(true)
+	local attackAnims = {
+		"nz_attack_stand_ad_2-2",
+		"nz_attack_stand_ad_2-3"
+	}
+
+	timer.Simple(.35,function()
+		if IsValid(self) and not self:GetStunned() then
+			self:EmitSound("npc/zombie/claw_miss1.wav")
+		end
+	end)
+	timer.Simple(0.45,function()
+		if IsValid(self) and not self:GetStunned() and IsValid(ent) then
+			local tr = util.TraceHull({
+				start = self:EyePos(),
+				endpos = self:EyePos() + self:GetForward() * 25,
+				maxs = Vector(16,16,16),
+				mins = Vector(-16,-16,-16),
+				filter = self
+			})
+
+			debugoverlay.Box(self:EyePos() + self:GetForward() * 25,Vector(16,16,16),Vector(-16,-16,-16),2)
+			if tr.Entity == ent then
+				BA2_AddInfection(ent,math.random(1,7) * GetConVar("ba2_zom_infectionmult"):GetFloat())
+
+				local dmg = DamageInfo()
+				dmg:SetDamage(math.random(9,13) * GetConVar("ba2_zom_dmgmult"):GetFloat())
+				dmg:SetDamageType(DMG_SLASH)
+				dmg:SetDamageCustom(DMG_BIOVIRUS)
+				dmg:SetAttacker(self)
+				dmg:SetInflictor(BA2_InfectionManager())
+
+				if self.BA2_LArmDown then
+					dmg:SetDamage(dmg:GetDamage() * 0.5)
+				end
+				if self.BA2_RArmDown then
+					dmg:SetDamage(dmg:GetDamage() * 0.5)
+				end
+				ent:TakeDamageInfo(dmg)
+
+				if ent:IsPlayer() then
+					ent:ViewPunch(AngleRand(-5,5) * 5)
+				end
+			end
+		end
+	end)
+
+	if self.BA2_Crippled then
+		self:PlaySequenceAndWait("crawlgrabmiss",1.5)
+	else
+		self:PlaySequenceAndWait(attackAnims[math.random(2)],1.5)
+	end
+
+	self:SetAttacking(false)
 end
 
 function ENT:ZombieStun()
@@ -612,12 +693,13 @@ function ENT:ZombieStun()
 
 	if self.BA2_Crippled then
 		self:ResetSequence("Crawlgrabshove")
+		self:SetPlaybackRate(.5)
 	else
 		self:ResetSequence("ShoveReact")
 	end
 
 	local timerName = self:EntIndex().."-stun"
-	timer.Create(timerName,self:SequenceDuration("ShoveReact"),1,function()
+	timer.Create(timerName,self:SequenceDuration(self:LookupSequence("ShoveReact")),1,function()
 		if IsValid(self) then
 			self:SetStunned(false)
 		end
@@ -906,6 +988,15 @@ end
 
 
 function ENT:OnTraceAttack(dmginfo,dir,trace)
+	if self.BA2_ArmoredZom and (trace.HitGroup == HITGROUP_HEAD or trace.HitGroup == HITGROUP_CHEST or trace.HitGroup == HITGROUP_STOMACH) then
+		dmginfo:SetDamage(dmginfo:GetDamage() * 0.75)
+
+		local eff = EffectData()
+		eff:SetOrigin(trace.HitPos)
+		util.Effect("cball_bounce",eff)
+
+		self:EmitSound("physics/metal/metal_sheet_impact_bullet2.wav",70,math.random(90,110))
+	end
 	if trace.HitGroup == HITGROUP_HEAD then
 		dmginfo:SetDamage(dmginfo:GetDamage() * 3)
 
@@ -1082,24 +1173,27 @@ function ENT:OnKilled(dmginfo)
 		self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",85)
 		body:EmitSound("ba2_headlessbleed")
 
-		self:DeflateBones({
-			"ValveBiped.Bip01_Head1",
-		},body)
-
-		local headPos = body:GetBonePosition(body:LookupBone("ValveBiped.Bip01_Head1"))
-		local gibs = {
-			"models/ba2/gibs/eyel.mdl",
-			"models/ba2/gibs/eyer.mdl",
-			"models/ba2/gibs/headbackl.mdl",
-			"models/ba2/gibs/headbackr.mdl",
-			"models/ba2/gibs/headfrontl.mdl",
-			"models/ba2/gibs/headfrontr.mdl",
-			"models/ba2/gibs/headtop.mdl",
-			"models/ba2/gibs/jaw.mdl"
-		}
-
-		for i,mdl in pairs(gibs) do
-			self:CreateGib(headPos,mdl,dmginfo:GetDamageForce():GetNormalized() * 250)
+		local headBone = body:LookupBone("ValveBiped.Bip01_Head1")
+		if headBone ~= nil then
+			self:DeflateBones({
+				"ValveBiped.Bip01_Head1",
+			},body)
+	
+			local headPos = body:GetBonePosition(headBone)
+			local gibs = {
+				"models/ba2/gibs/eyel.mdl",
+				"models/ba2/gibs/eyer.mdl",
+				"models/ba2/gibs/headbackl.mdl",
+				"models/ba2/gibs/headbackr.mdl",
+				"models/ba2/gibs/headfrontl.mdl",
+				"models/ba2/gibs/headfrontr.mdl",
+				"models/ba2/gibs/headtop.mdl",
+				"models/ba2/gibs/jaw.mdl"
+			}
+	
+			for i,mdl in pairs(gibs) do
+				self:CreateGib(headPos,mdl,dmginfo:GetDamageForce():GetNormalized() * 250)
+			end
 		end
 
 		local eff = EffectData()
@@ -1389,3 +1483,10 @@ function ENT:HasCondition(condition)
 end
 
 -- Hello from the past -Sninctbur
+
+--[[ Animations to delete:
+	Ad11
+	Ad7
+	Ad8
+	Au5
+]]
