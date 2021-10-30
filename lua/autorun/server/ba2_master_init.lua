@@ -68,6 +68,7 @@ CreateConVar("ba2_zom_range",10000,FCVAR_ARCHIVE,[[Multiply zombie targeting ran
     Set to 0 to turn them into the most miserable beings in existence.]],0)
 CreateConVar("ba2_zom_nonheadshotmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage received on non-headshots by this amount.]],0,1)
 CreateConVar("ba2_zom_limbdamagemult",.5,FCVAR_ARCHIVE,[[Multiply zombie damage received on limb shots by this amount.]],0,1)
+CreateConVar("ba2_zom_armordamagemult",.75,FCVAR_ARCHIVE,[[Multiply armored zombie damage received to the head and torso by this amound.]],0,1)
 CreateConVar("ba2_zom_damagestun",1,FCVAR_ARCHIVE,[[If enabled, zombies will stagger if they take more than half their current health in damage.]])
 CreateConVar("ba2_zom_emergetime",8,FCVAR_ARCHIVE,[[After getting killed by an infectious source, entities will take this long to rise into a zombie.]])
 CreateConVar("ba2_zom_armdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have their arms broken.

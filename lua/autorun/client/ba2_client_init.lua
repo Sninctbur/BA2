@@ -317,13 +317,15 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:Help("Custom Model Paths:")
         panel:ControlHelp("Press Help key (F1) to keep the spawnmenu open")
+        panel:ControlHelp("Type --ARMORED-- and place paths below the line to indicate Armored models")
         local tBox = vgui.Create("DTextEntry")
         tBox:SetMultiline(true)
         tBox:SetVerticalScrollbarEnabled(true)
         tBox:SetSize(400,300)
 
         local defText = ""
-        local tbl = BA2_GetAltModels(true)
+        local tbl1,tbl2 = BA2_GetAltModels(true)
+        local tbl = table.Add(tbl1,tbl2)
 
         for i,str in pairs(tbl) do
             defText = defText..str.."\n"
@@ -424,6 +426,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Stun by Damage","ba2_zom_damagestun")
         panel:CheckBox("Arm Damage/Disarming","ba2_zom_armdamage")
         panel:CheckBox("Leg Damage/Crippling","ba2_zom_legdamage")
+        panel:CheckBox("Claw Attack Mode","ba2_zom_attackmode")
 
         panel:NumSlider("Health","ba2_zom_health",1,500,0)
         panel:NumSlider("Damage Multiplier","ba2_zom_dmgmult",0,10,2)
@@ -431,6 +434,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Detection Range","ba2_zom_range",0,50000,0)
         panel:NumSlider("Non-Headshot Damage Multiplier","ba2_zom_nonheadshotmult",0,1,2)
         panel:NumSlider("Limb Damage Multiplier","ba2_zom_limbdamagemult",0,1,2)
+        panel:NumSlider("Armored Damage Multiplier","ba2_zom_armordamagemult",0,1,2)
         panel:NumSlider("Infected Raise Time","ba2_zom_emergetime",0,300,0)
         panel:NumSlider("Medic Vial Drop Chance","ba2_zom_medicdropchance",0,100,0)
 

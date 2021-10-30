@@ -632,12 +632,7 @@ function ENT:ZombieAttackAlt(ent)
 		"nz_attack_stand_ad_2-3"
 	}
 
-	timer.Simple(.35,function()
-		if IsValid(self) and not self:GetStunned() then
-			self:EmitSound("npc/zombie/claw_miss1.wav")
-		end
-	end)
-	timer.Simple(0.45,function()
+	timer.Simple(.28,function()
 		if IsValid(self) and not self:GetStunned() and IsValid(ent) then
 			local tr = util.TraceHull({
 				start = self:EyePos(),
@@ -652,7 +647,7 @@ function ENT:ZombieAttackAlt(ent)
 				BA2_AddInfection(ent,math.random(1,7) * GetConVar("ba2_zom_infectionmult"):GetFloat())
 
 				local dmg = DamageInfo()
-				dmg:SetDamage(math.random(9,13) * GetConVar("ba2_zom_dmgmult"):GetFloat())
+				dmg:SetDamage(math.random(10,15) * GetConVar("ba2_zom_dmgmult"):GetFloat())
 				dmg:SetDamageType(DMG_SLASH)
 				dmg:SetDamageCustom(DMG_BIOVIRUS)
 				dmg:SetAttacker(self)
@@ -669,14 +664,19 @@ function ENT:ZombieAttackAlt(ent)
 				if ent:IsPlayer() then
 					ent:ViewPunch(AngleRand(-5,5) * 5)
 				end
+
+				self:EmitSound("ba2_fleshtear")
+			else
+				self:EmitSound("npc/zombie/claw_miss1.wav")
 			end
 		end
 	end)
 
+	self:EmitSound("npc/zombie/foot_slide"..math.random(1,3)..".wav")
 	if self.BA2_Crippled then
-		self:PlaySequenceAndWait("crawlgrabmiss",1.5)
+		self:PlaySequenceAndWait("crawlgrabmiss",1.75)
 	else
-		self:PlaySequenceAndWait(attackAnims[math.random(2)],1.5)
+		self:PlaySequenceAndWait(attackAnims[math.random(2)],1.75)
 	end
 
 	self:SetAttacking(false)
@@ -989,13 +989,13 @@ end
 
 function ENT:OnTraceAttack(dmginfo,dir,trace)
 	if self.BA2_ArmoredZom and (trace.HitGroup == HITGROUP_HEAD or trace.HitGroup == HITGROUP_CHEST or trace.HitGroup == HITGROUP_STOMACH) then
-		dmginfo:SetDamage(dmginfo:GetDamage() * 0.75)
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_armordamagemult"):GetFloat())
 
 		local eff = EffectData()
 		eff:SetOrigin(trace.HitPos)
-		util.Effect("cball_bounce",eff)
+		util.Effect("StunstickImpact",eff)
 
-		self:EmitSound("physics/metal/metal_sheet_impact_bullet2.wav",70,math.random(90,110))
+		self:EmitSound("physics/metal/metal_sheet_impact_bullet2.wav",80,math.random(90,110))
 	end
 	if trace.HitGroup == HITGROUP_HEAD then
 		dmginfo:SetDamage(dmginfo:GetDamage() * 3)
@@ -1171,10 +1171,10 @@ function ENT:OnKilled(dmginfo)
 	if self.BA2_HeadshotEffect then
 		self:KillSounds()
 		self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",85)
-		body:EmitSound("ba2_headlessbleed")
 
 		local headBone = body:LookupBone("ValveBiped.Bip01_Head1")
 		if headBone ~= nil then
+			body:EmitSound("ba2_headlessbleed")
 			self:DeflateBones({
 				"ValveBiped.Bip01_Head1",
 			},body)
@@ -1194,26 +1194,27 @@ function ENT:OnKilled(dmginfo)
 			for i,mdl in pairs(gibs) do
 				self:CreateGib(headPos,mdl,dmginfo:GetDamageForce():GetNormalized() * 250)
 			end
+
+			local eff = EffectData()
+			eff:SetFlags(6)
+			eff:SetColor(0)
+			eff:SetScale(10)
+			eff:SetEntity(body)
+			eff:SetAttachment(6)
+			
+			local timer1 = body:EntIndex().."-headshot1"
+			timer.Create(timer1,0.1,math.random(17,20),function()
+				local headBone = body:LookupBone("ValveBiped.Bip01_Head1")
+				if IsValid(body) and headBone ~= nil then
+					eff:SetOrigin(body:GetBonePosition(headBone))
+					util.Effect("BloodImpact",eff)
+				else
+					timer.Destroy(timer1)
+				end
+			end)
+
+			timer.Start(timer1)
 		end
-
-		local eff = EffectData()
-		eff:SetFlags(6)
-		eff:SetColor(0)
-		eff:SetScale(10)
-		eff:SetEntity(body)
-		eff:SetAttachment(6)
-		
-		local timer1 = body:EntIndex().."-headshot1"
-		timer.Create(timer1,0.1,math.random(17,20),function()
-			if IsValid(body) then
-				eff:SetOrigin(body:GetBonePosition(body:LookupBone("ValveBiped.Bip01_Head1")))
-				util.Effect("BloodImpact",eff)
-			else
-				timer.Destroy(timer1)
-			end
-		end)
-
-		timer.Start(timer1)
 	end
 
 	local phys = body:GetPhysicsObject()

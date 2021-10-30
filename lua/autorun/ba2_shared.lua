@@ -37,6 +37,9 @@ function BA2_GetAltModels(raw,noPrint)
     while !file:EndOfFile() do
         local line = string.Trim(file:ReadLine(),"\n")
         if line == "--ARMORED--" then
+            if raw then
+                table.insert(tblArm,line)
+            end
             toProcessArm = true
             break
         elseif line ~= "" then
@@ -136,7 +139,7 @@ BA2_ZombieTypes = {
 
 DMG_BIOVIRUS = 83598
 
-BA2_MODVERSION = "Release 2 Alpha C3"
+BA2_MODVERSION = "Release 2"
 
 BA2_JMod = (JMod_GetArmorBiologicalResistance ~= nil)
 
