@@ -105,7 +105,7 @@ CreateConVar("ba2_misc_gibdecals",1,FCVAR_ARCHIVE,[[If enabled, zombie gibs will
 --     Enabling this may correct interactions with some addons (for example, JMod), but can cause Lua errors in others. Enable at your own risk.]])
 
 concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
-CreateConVar("ba2_misc_kidsmode",0,FCVAR_ARCHIVE,[[If enabled, this mod will become less appalling to the ESRB.]])
+--CreateConVar("ba2_misc_kidsmode",0,FCVAR_ARCHIVE,[[If enabled, this mod will become less appalling to the ESRB.]])
 
 concommand.Add("ba2_gasmask",BA2_ToggleGasmask,nil)
 concommand.Add("ba2_dgasmask",BA2_DropGasmask,nil)
