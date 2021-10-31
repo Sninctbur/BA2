@@ -146,7 +146,9 @@ language.Add("nb_ba2_infected","Infected")
 language.Add("nb_ba2_infected_citizen","Infected")
 language.Add("nb_ba2_infected_rebel","Infected")
 language.Add("nb_ba2_infected_combine","Infected")
+language.Add("nb_ba2_infected_police","Infected")
 language.Add("nb_ba2_infected_custom","Infected")
+language.Add("nb_ba2_infected_custom_armored","Infected")
 language.Add("ba2_airwaste","Air Waste")
 language.Add("ba2_barrel","Contaminant Barrel")
 language.Add("ba2_infection_manager"," ") -- SpOoOoOoOoOoOoky killfeed
@@ -253,7 +255,7 @@ end
 hook.Add("PopulateToolMenu","ba2_options",function(panel)
     -- ABOUT
     spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_abt","About","","",function(panel)
-        panel:Help("Sninctbur presents:")
+        panel:Help("Gauss presents:")
 
         local img = vgui.Create("DImage")
         img:SetImage("vgui/ba2_splash")

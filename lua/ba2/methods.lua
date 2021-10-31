@@ -80,6 +80,7 @@ end
 
 function BA2_RaiseZombie(ent)
     local maxZoms = GetConVar("ba2_inf_maxzoms"):GetInt()
+    local armoredModels = table.Add({"models/combine_soldier.mdl","models/combine_super_soldier.mdl"},BA2_CustomArmInfs)
 
     if maxZoms > 0 and #ents.FindByClass("nb_ba2_infected*") >= maxZoms then
         return
@@ -94,6 +95,9 @@ function BA2_RaiseZombie(ent)
     zom.InfVoice = ent.InfVoice or nil
     if GetConVar("ba2_zom_emergetime"):GetFloat() == 0 then
         zom.noRise = true
+    end
+    if table.HasValue(armoredModels,zom.InfBody) then
+        zom.BA2_ArmoredZom = true
     end
 
     for i = 1,ent:GetNumBodyGroups() do

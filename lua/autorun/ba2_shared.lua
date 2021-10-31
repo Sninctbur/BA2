@@ -44,7 +44,7 @@ function BA2_GetAltModels(raw,noPrint)
             break
         elseif line ~= "" then
             if raw or util.IsValidRagdoll(line) then
-                table.insert(tbl,line)
+                table.insert(tbl,string.lower(line))
             elseif !noPrint then
                 print("BA2: Invalid custom model detected: "..line)
             end
@@ -64,7 +64,7 @@ function BA2_GetAltModels(raw,noPrint)
             local line = string.Trim(file:ReadLine(),"\n")
             if line ~= "" then
                 if raw or util.IsValidRagdoll(line) then
-                    table.insert(tblArm,line)
+                    table.insert(tblArm,string.lower(line))
                 elseif !noPrint then
                     print("BA2: Invalid custom model detected: "..line)
                 end
