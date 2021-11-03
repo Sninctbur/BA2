@@ -74,6 +74,10 @@ function ENT:BA2_BarrelExplode()
 
     for i,ent in pairs(ents.FindInSphere(self:GetPos(),400)) do
         if (ent:IsPlayer() and !BA2_GetActiveMask(ent)) or (ent:IsNPC() and !BA2_GasmaskNpcs[ent]) then
+            if BA2_JMod and ent:IsPlayer() and JMod_GetArmorBiologicalResistance(ent,DMG_NERVEGAS) == 1 then
+                JMod_DepleteArmorChemicalCharge(ent,.125)
+                continue
+            end
             BA2_AddInfection(ent,(dmg:GetDamage() - self:GetPos():Distance(ent:GetPos())) / 2)
         end
     end
@@ -135,6 +139,11 @@ function ENT:Think()
     end
     if hp <= 80 then
         for i,ent in pairs(ents.FindInSphere(self:GetPos(),(self:GetMaxHealth() - self:Health()) * 2)) do
+            if BA2_JMod and ent:IsPlayer() and JMod_GetArmorBiologicalResistance(ent,DMG_NERVEGAS) > 0 then
+                JMod_DepleteArmorChemicalCharge(ent,.125)
+                continue
+            end
+
             if !BA2_GetActiveMask(ent) then
                 BA2_AddInfection(ent,math.random(3,5))
             end

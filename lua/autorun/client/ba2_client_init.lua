@@ -25,7 +25,7 @@ function BA2_NoNavmeshWarn()
     lbl:SetWrap(true)
     lbl:SetText("Bio-Annihilation II’s zombies are Nextbots, and thus require a Navmesh to function. Unfortunately, the map you’ve just loaded doesn’t have a navmesh."
         .."\nBut that’s no problem! I, Zambo the Help Zombie, am here to help you fix this."
-        .."\n\nTo add a navmesh to this map, you have two simple options:"
+        .."\n\nTo add a navmesh to this map, the two simplest options are as follows:"
         .."\n• Some addons add a navmesh to specific maps. If you can find one for this map, install it and restart the server. It will work immediately!"
         .."\n• You can also generate the navmesh yourself. This process is straightforward, but can take time and may not work correctly depending on the map. I’ll walk you through it in the steps below."
         .."\n\n"
@@ -152,7 +152,9 @@ language.Add("nb_ba2_infected","Infected")
 language.Add("nb_ba2_infected_citizen","Infected")
 language.Add("nb_ba2_infected_rebel","Infected")
 language.Add("nb_ba2_infected_combine","Infected")
+language.Add("nb_ba2_infected_police","Infected")
 language.Add("nb_ba2_infected_custom","Infected")
+language.Add("nb_ba2_infected_custom_armored","Infected")
 language.Add("ba2_airwaste","Air Waste")
 language.Add("ba2_barrel","Contaminant Barrel")
 language.Add("ba2_infection_manager"," ") -- SpOoOoOoOoOoOoky killfeed
@@ -244,7 +246,6 @@ hook.Add("DrawOverlay","BA2_CameraSmog",function()
     end
 end)
 
-
 -- Q-menu options
 local adminString = "You must be a server admin to modify these settings. You're still allowed to look, though.\n"
 
@@ -260,7 +261,7 @@ end
 hook.Add("PopulateToolMenu","ba2_options",function(panel)
     -- ABOUT
     spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_abt","About","","",function(panel)
-        panel:Help("Gamma presents, a modified Sninctbur addon:")
+        panel:Help("Gamma presents, a modified Gauss addon:")
 
         local img = vgui.Create("DImage")
         img:SetImage("vgui/ba2_splash")
@@ -331,13 +332,15 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:Help("Custom Model Paths:")
         panel:ControlHelp("Press Help key (F1) to keep the spawnmenu open")
+        panel:ControlHelp("Type --ARMORED-- and place paths below the line to indicate Armored models")
         local tBox = vgui.Create("DTextEntry")
         tBox:SetMultiline(true)
         tBox:SetVerticalScrollbarEnabled(true)
         tBox:SetSize(400,300)
 
         local defText = ""
-        local tbl = BA2_GetAltModels(true)
+        local tbl1,tbl2 = BA2_GetAltModels(true)
+        local tbl = table.Add(tbl1,tbl2)
 
         for i,str in pairs(tbl) do
             defText = defText..str.."\n"
@@ -377,6 +380,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Maximum Zombies","ba2_hs_max",1,100,0)
         panel:NumSlider("Horde Spawner Interval","ba2_hs_interval",0.1,30,1)
         panel:NumSlider("Point Spawner Interval","ba2_ps_interval",0.1,30,1)
+        panel:NumSlider("Maximum Radius","ba2_hs_maxradius",0,10000,0)
         panel:NumSlider("Safe Radius","ba2_hs_saferadius",0,10000,0)
         panel:NumSlider("Detection Range","ba2_hs_zom_range",0,10000,0)
         panel:ControlHelp("If set to 0, zombies spawned by the horde spawner will use the detection range from the \"Zombies\" tab. If you do change this, make sure to make it a bit greater than the Safe Radius.")
@@ -392,10 +396,12 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:Help("Appearance:")
         panel:CheckBox("Citizen","ba2_hs_appearance_0")
         panel:CheckBox("Rebel","ba2_hs_appearance_1")
-        panel:CheckBox("Combine","ba2_hs_appearance_2")
+        panel:CheckBox("Metrocop","ba2_hs_appearance_2")
         panel:CheckBox("Custom","ba2_hs_appearance_3")
+        panel:NumSlider("Combine Chance","ba2_hs_combine_chance",0,100)
+        panel:NumSlider("Custom Armored Chance","ba2_hs_carmor_chance",0,100)
 
-        panel:Button("Delete Active Horde Spawner","ba2_hs_delete")
+        panel:Button("Delete Active Horde Spawner","ba2_hs_delete","")
 
         panel:Help("THE FOLLOWING SETTINGS ARE EXPERIMENTAL. USE AT YOUR OWN RISK!")
         panel:Help("(That being said, they might make the horde spawner better!)")
@@ -422,12 +428,15 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Romero Mode","ba2_inf_romeromode")
         panel:ControlHelp("All dead players and NPCs raise as zombies, regardless of infection")
 
+        panel:NumSlider("Maximum Zombies","ba2_inf_maxzoms",0,100,0)
+        panel:ControlHelp("New zombies will not raise if there are this many zombies alive")
         panel:NumSlider("Contagion Radius","ba2_inf_contagionmult",0,10,2)
         panel:NumSlider("Player Infection","ba2_inf_plymult",0,10,2)
         panel:NumSlider("NPC Infection","ba2_inf_npcmult",0,10,2)
         panel:NumSlider("Infection Damage","ba2_inf_dmgmult",0,10,2)
-        panel:NumSlider("Maximum Zombies","ba2_inf_maxzoms",0,100,0)
         panel:ControlHelp("Set values to 0 to disable their respective features")
+
+        panel:Button("Delete Clouds and Air Waste","ba2_inf_deleteclouds")
     end)
 
     -- ZOMBIES
@@ -436,11 +445,14 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
             panel:ControlHelp(adminString)
         end
         panel:Help("You can type \"find ba2_zom\" in the developer console for more information about these settings.")
-        panel:Help("These settings change the attributes of zombies, allowing you to make them easier or harder to kill.")
+        panel:Help("These settings change the attributes of zombies, allowing you to change their behavior or make them easier or harder to kill.")
 
+        panel:CheckBox("Target Swapping","ba2_zom_retargeting")
+        panel:ControlHelp("May cause stuttering")
         panel:CheckBox("Stun by Damage","ba2_zom_damagestun")
         panel:CheckBox("Arm Damage/Disarming","ba2_zom_armdamage")
         panel:CheckBox("Leg Damage/Crippling","ba2_zom_legdamage")
+        panel:CheckBox("Claw Attack Mode","ba2_zom_attackmode")
 
         panel:NumSlider("Health","ba2_zom_health",1,500,0)
         panel:NumSlider("Damage Multiplier","ba2_zom_dmgmult",0,10,2)
@@ -448,6 +460,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Detection Range","ba2_zom_range",0,50000,0)
         panel:NumSlider("Non-Headshot Damage Multiplier","ba2_zom_nonheadshotmult",0,1,2)
         panel:NumSlider("Limb Damage Multiplier","ba2_zom_limbdamagemult",0,1,2)
+        panel:NumSlider("Armored Damage Multiplier","ba2_zom_armordamagemult",0,1,2)
         panel:NumSlider("Infected Raise Time","ba2_zom_emergetime",0,300,0)
         panel:NumSlider("Medic Vial Drop Chance","ba2_zom_medicdropchance",0,100,0)
         panel:NumSlider("Pursuit Speed","ba2_zom_pursuitspeed_ge",45,300,0)
@@ -502,6 +515,7 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:CheckBox("Air Waste Visuals","ba2_misc_airwastevisuals")
         panel:CheckBox("Air Waste View Shake","ba2_misc_airwasteshake")
+        panel:CheckBox("Gib Bloodstains","ba2_misc_gibdecals")
         panel:CheckBox("No Navmesh Warning","ba2_misc_navmeshwarn")
         panel:CheckBox("Zombie Kill Credit","ba2_misc_addscore")
         panel:CheckBox("Show Gamma Edition Info","ba2_misc_gammaeditioninfo")

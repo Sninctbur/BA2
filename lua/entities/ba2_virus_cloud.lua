@@ -36,7 +36,12 @@ end
 
 function ENT:Think()
 	for i,ent in pairs(ents.FindInSphere(self:GetPos(),400)) do
-		if (ent:IsPlayer() and !BA2_GetActiveMask(ent)) or (ent:IsNPC() and !BA2_GasmaskNpcs[ent]) then
+		if BA2_JMod and ent:IsPlayer() and JMod_GetArmorBiologicalResistance(ent,DMG_NERVEGAS) > 0 then
+			JMod_DepleteArmorChemicalCharge(ent,.0125)
+			continue
+		end
+
+		if !BA2_GetActiveMask(ent) then
 			BA2_AddInfection(ent,math.random(3,4))
 		end
 		if GetConVar("ba2_misc_maskfilters"):GetBool() and ent:IsPlayer() and BA2_GetActiveMask(ent) then

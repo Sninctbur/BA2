@@ -73,6 +73,11 @@ function ENT:Think()
         local entTable = table.Add(player.GetAll(),ents.FindByClass("npc_*"))
 
         for i,ent in pairs(entTable) do
+            local JModResistance = 0
+            if BA2_JMod and ent:IsPlayer() then
+                JModResistance = JMod_GetArmorBiologicalResistance(ent,DMG_NERVEGAS)
+            end
+
             if !BA2_GetActiveMask(ent) then
                 local trace = util.TraceLine({
                     start = ent:GetPos(),
@@ -81,15 +86,19 @@ function ENT:Think()
                 })
         
                 if !trace.HitWorld or trace.HitSky then
-                    BA2_AddInfection(ent,math.random(1,5))
+                    if JModResistance == 0 then
+                        BA2_AddInfection(ent,math.random(1,5))
+                    end
 
-                    local dmg = DamageInfo()
-                    dmg:SetDamage(math.random(0,2))
-                    dmg:SetDamageType(DMG_ACID)
-                    dmg:SetAttacker(BA2_InfectionManager())
-                    dmg:SetInflictor(BA2_InfectionManager())
-                    
-                    ent:TakeDamageInfo(dmg)
+                    if JModResistance < 1 then
+                        local dmg = DamageInfo()
+                        dmg:SetDamage(math.random(0,2))
+                        dmg:SetDamageType(DMG_ACID)
+                        dmg:SetAttacker(BA2_InfectionManager())
+                        dmg:SetInflictor(BA2_InfectionManager())
+
+                        ent:TakeDamageInfo(dmg)
+                    end
                 end
             elseif GetConVar("ba2_misc_maskfilters"):GetBool() and ent:IsPlayer() and BA2_GetActiveMask(ent) then
                 ent:SetNWInt("BA2_GasmaskFilterPct",ent:GetNWInt("BA2_GasmaskFilterPct",0) - .0625)

@@ -31,15 +31,15 @@ function ENT:Initialize()
     end
 end
 
-function ENT:Think()
-    if CLIENT then
-        -- local p = LocalPlayer()
-        -- local visTrace = util.TraceLine({
-        --     Start = self:GetPos(),
-        --     EndPos = EyePos(),
-        --     filter = self
-        -- })
-        -- debugoverlay.Line(visTrace.StartPos,visTrace.HitPos)
-        -- self:SetNoDraw(visTrace.HitEntity == p)
-    end
-end
+-- function ENT:Think()
+--     if CLIENT then
+--         local p = LocalPlayer()
+--         local visTrace = util.TraceLine({
+--             Start = self:GetPos(),
+--             EndPos = EyePos(),
+--             filter = self
+--         })
+--         debugoverlay.Line(visTrace.StartPos,visTrace.HitPos)
+--         self:SetNoDraw(visTrace.HitEntity == p)
+--     end
+-- end

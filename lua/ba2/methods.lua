@@ -17,6 +17,13 @@ function BA2_GetValidAppearances()
         table.insert(zomTypes,BA2_ZombieTypes[3])
     end -- there's probably a shorter way to do this
 
+    -- if GetConVar("ba2_hs_combine_chance"):GetInt() > math.random() then
+    --     table.insert(zomTypes,BA2_ZombieTypes[4])
+    -- end
+    -- if GetConVar("ba2_hs_carmor_chance"):GetInt() > math.random() then
+    --     table.insert(zomTypes,BA2_ZombieTypes[5])
+    -- end
+
     if #zomTypes == 0 then
         zomTypes = table.Copy(BA2_ZombieTypes)
     end
@@ -40,6 +47,7 @@ function BA2_AddInfection(ent,amnt)
         amnt = amnt * GetConVar("ba2_inf_npcmult"):GetFloat()
     end
 
+    amnt = math.floor(amnt)
     if amnt == 0 then return end
 
     if ent.BA2Infection == nil then
@@ -51,6 +59,17 @@ function BA2_AddInfection(ent,amnt)
     ent.BA2Infection_FirstTick = true 
 end
 
+function BA2_CanConvert(ent)
+    return (ent:IsPlayer() or BA2_ConvertibleNpcs[ent:GetClass()])
+end
+
+function BA2_GetActiveMask(p)
+    if p:IsPlayer() then
+        return p:GetNWBool("BA2_GasmaskOn",false) and (!GetConVar("ba2_misc_maskfilters"):GetBool() or p:GetNWInt("BA2_GasmaskFilterPct",0) > 0)
+    elseif p:IsNPC() then
+        return p:GetNWBool("BA2_GasmaskOn",false) or BA2_GasmaskNpcs[p:GetClass()]
+    end
+end
 
 function BA2_InfectionManager()
     if not IsValid(BA2_InfManager) then
@@ -64,6 +83,7 @@ end
 
 function BA2_RaiseZombie(ent)
     local maxZoms = GetConVar("ba2_inf_maxzoms"):GetInt()
+    local armoredModels = table.Add({"models/combine_soldier.mdl","models/combine_super_soldier.mdl"},BA2_CustomArmInfs)
 
     if maxZoms > 0 and #ents.FindByClass("nb_ba2_infected*") >= maxZoms then
         return
@@ -78,6 +98,9 @@ function BA2_RaiseZombie(ent)
     zom.InfVoice = ent.InfVoice or nil
     if GetConVar("ba2_zom_emergetime"):GetFloat() == 0 then
         zom.noRise = true
+    end
+    if table.HasValue(armoredModels,zom.InfBody) then
+        zom.BA2_ArmoredZom = true
     end
 
     for i = 1,ent:GetNumBodyGroups() do

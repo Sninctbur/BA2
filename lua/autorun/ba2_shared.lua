@@ -5,6 +5,8 @@ CreateConVar("ba2_misc_airwasteshake",1,FCVAR_ARCHIVE,"If enabled, players outsi
 
 -- Custom infected models
 BA2_CustomInfs = {}
+BA2_CustomArmInfs = {}
+
 function BA2_WriteToAltModels(list)
     if list ~= nil then
         print("BA2: Overwriting ba2_altmodels.txt...")
@@ -22,6 +24,7 @@ function BA2_WriteToAltModels(list)
 end
 function BA2_GetAltModels(raw,noPrint)
     local tbl = {}
+    local tblArm = {}
 
     if !file.Exists("ba2_altmodels.txt","DATA") then
         print("BA2: Creating ba2_altmodels.txt...")
@@ -29,18 +32,24 @@ function BA2_GetAltModels(raw,noPrint)
     end
 
     local file = file.Open("ba2_altmodels.txt","r","DATA")
+    local toProcessArm = false
     
     while !file:EndOfFile() do
         local line = string.Trim(file:ReadLine(),"\n")
-        if line ~= "" then
+        if line == "--ARMORED--" then
+            if raw then
+                table.insert(tblArm,line)
+            end
+            toProcessArm = true
+            break
+        elseif line ~= "" then
             if raw or util.IsValidRagdoll(line) then
-                table.insert(tbl,line)
+                table.insert(tbl,string.lower(line))
             elseif !noPrint then
                 print("BA2: Invalid custom model detected: "..line)
             end
         end
     end
-
     if #tbl == 0 and !raw then
         if SERVER and !noPrint then
             print("BA2: No valid custom models found! Using default...")
@@ -50,7 +59,23 @@ function BA2_GetAltModels(raw,noPrint)
         }
     end
 
-    return tbl
+    if toProcessArm then
+        while !file:EndOfFile() do
+            local line = string.Trim(file:ReadLine(),"\n")
+            if line ~= "" then
+                if raw or util.IsValidRagdoll(line) then
+                    table.insert(tblArm,string.lower(line))
+                elseif !noPrint then
+                    print("BA2: Invalid custom model detected: "..line)
+                end
+            end
+        end
+    end
+    if #tblArm == 0 and !raw then
+        tblArm = table.Copy(tbl)
+    end
+
+    return tbl,tblArm
 end
 function BA2_ReloadCustoms()
     if !file.Exists("ba2_altmodels.txt","DATA") then
@@ -58,14 +83,14 @@ function BA2_ReloadCustoms()
         file.Write("ba2_altmodels.txt","")
     end
     
-    BA2_CustomInfs = BA2_GetAltModels()
+    BA2_CustomInfs,BA2_CustomArmInfs = BA2_GetAltModels()
     
     print("BA2: Custom Infected models loaded!") 
-    return BA2_CustomInfs
+    return BA2_CustomInfs,BA2_CustomArmInfs
 end
 
 function BA2_GetCustomInfs()
-    return BA2_CustomInfs
+    return BA2_CustomInfs,BA2_CustomArmInfs
 end
 
 --  Global variables
@@ -106,13 +131,17 @@ BA2_FemaleModels = {
 BA2_ZombieTypes = {
     [0] = "nb_ba2_infected_citizen",
     [1] = "nb_ba2_infected_rebel",
-    [2] = "nb_ba2_infected_combine",
+    [2] = "nb_ba2_infected_police",
     [3] = "nb_ba2_infected_custom",
+    [4] = "nb_ba2_infected_combine",
+    [5] = "nb_ba2_infected_custom_armored",
 }
 
 DMG_BIOVIRUS = 83598
 
-BA2_MODVERSION = "Main Branch Release 1, Gamma Edition v1.2.1"
+BA2_MODVERSION = "Main Branch Release 2, Gamma Edition v1.2.1"
+
+BA2_JMod = (JMod_GetArmorBiologicalResistance ~= nil)
 
 -- Sounds
 sound.Add({
