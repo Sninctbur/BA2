@@ -77,6 +77,7 @@ function ENT:Initialize()
         end, "BA2_HordeSpawner_IgnorePlayers")
 
         self.navs = navmesh.GetAllNavAreas() 
+
         self:SpawnZoms(math.random(5,10))
         timer.Create("BA2_HordeSpawner",GetConVar("ba2_hs_interval"):GetFloat(),0,function()
             if IsValid(self) then
@@ -123,11 +124,18 @@ function ENT:SpawnZoms(amnt)
     --     zomType = BA2_ZombieTypes[zomType]
     -- end
 
-    local zomTypes = BA2_GetValidAppearances()
+    local zomTypes = {}
+    if GetConVar("ba2_hs_combine_chance"):GetFloat() / 100 > math.random() then
+        zomTypes = {"nb_ba2_infected_combine"}
+    elseif GetConVar("ba2_hs_carmor_chance"):GetFloat() / 100 > math.random() then
+        zomTypes = {"nb_ba2_infected_custom_armored"}
+    else
+        zomTypes = BA2_GetValidAppearances()
+    end
 
     if SERVER then
         for i = 1,amnt do
-            timer.Simple(i * 0.1,function() -- O P T I M I Z E D
+            timer.Simple(i * .2,function() -- O P T I M I Z E D
                 if IsValid(self) and self.zoms ~= nil and self.numberOfZoms < zomThreshold then
                     local navArea
                     
@@ -195,13 +203,6 @@ function ENT:SpawnZoms(amnt)
 
                     local zom = ents.Create(zomTypes[math.random(1,#zomTypes)])
 
-                    for i,ent in pairs(ents.FindInSphere(spawnPos,GetConVar("ba2_hs_saferadius"):GetInt())) do
-                        if zom:IsValidEnemy(ent) then
-                            zom:Remove()
-                            return
-                        end
-                    end
-
                     zom:SetPos(spawnPos)
                     zom.noRise = true
                     if not GetConVar("ba2_hs_proximityspawns"):GetBool() then
@@ -214,6 +215,7 @@ function ENT:SpawnZoms(amnt)
                     if GetConVar("ba2_hs_stoptargetingoutsidedetectionrange"):GetBool() then
                         zom.BA2_StopTargetingOutsideDetectionRange = true
                     end
+                    zom.BA2_AutoSpawned = true
                     zom:Spawn()
                     zom:Activate()
 

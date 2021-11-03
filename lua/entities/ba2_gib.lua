@@ -20,6 +20,8 @@ function ENT:Initialize()
                 end
             end)
         end
+
+        self.decalConvar = GetConVar("ba2_misc_gibdecals"):GetBool()
     end
 end
 
@@ -29,6 +31,7 @@ function ENT:PhysicsCollide(data,collider)
     -- end
     if data.Speed >= 50 then
         self:EmitSound("ba2_gibsplat")
+        if self.decalConvar ~= true then return end
         if data.Speed >= 200 then
             util.Decal("Blood",data.HitPos - data.HitNormal,data.HitPos + data.HitNormal)
         end
