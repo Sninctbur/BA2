@@ -1551,6 +1551,16 @@ end
 function ENT:SetCurrentWeaponProficiency(proficiency)
 
 end
+
+-- EGADS! NPC stub functions that actually do something!
+function ENT:ClearEnemyMemory(enemy, pos)
+	self:SetEnemy(nil);
+end
+
+function ENT:UpdateEnemyMemory(enemy, pos)
+	self:SetEnemy(enemy);
+end
+
 -- Hello from the past -Sninctbur
 
 --[[ Animations to delete:

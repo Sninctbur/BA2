@@ -63,7 +63,7 @@ CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise n
     More zombies means more difficulty - for both you and your machine.
     Set to 0 to enable expert mode: unlimited capacity.]],0)
 CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
-concommand.Add("ba2_inf_deleteclouds",BA2_DestroyClouds,nil,"Destroys all Contaminant Clouds on the map, as well as the Air Waste if it exists.")
+concommand.Add("ba2_inf_deleteclouds",BA2_DestroyClouds,nil,"Destroys all Contaminant Clouds on the map.")
 
 CreateConVar("ba2_zom_pursuitspeed_ge",120,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
     45: Pacing speed ("*yawn* Let me get a drink...")
@@ -367,10 +367,6 @@ function BA2_DestroyAW()
 end
 
 function BA2_DestroyClouds()
-    local hs = ents.FindByClass("ba2_airwaste")
-    if #hs >= 1 then
-        hs[1]:Remove()
-    end
     for i,c in pairs(ents.FindByClass("ba2_virus_cloud")) do
         c:Remove()
     end

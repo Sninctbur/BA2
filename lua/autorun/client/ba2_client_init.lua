@@ -436,7 +436,8 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:NumSlider("Infection Damage","ba2_inf_dmgmult",0,10,2)
         panel:ControlHelp("Set values to 0 to disable their respective features")
 
-        panel:Button("Delete Clouds and Air Waste","ba2_inf_deleteclouds")
+        panel:Button("Delete Contaminant Clouds","ba2_inf_deleteclouds")
+        panel:Button("Delete Active Air Waste", "ba2_aw_delete")
     end)
 
     -- ZOMBIES
@@ -486,11 +487,6 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
         panel:CheckBox("Pathtraced Wandering","ba2_zom_ptwander")
         panel:CheckBox("Handle Bad Paths","ba2_zom_handlebadpaths")
         panel:CheckBox("Better Door Breaking","ba2_zom_betterdoorbreaking")
-    end)
-
-    -- AIR WASTE
-    spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_aw","Air Waste","","",function(panel)
-        panel:Button("Delete Active Air Waste", "ba2_aw_delete")
     end)
 
     -- MISCELLANEOUS
