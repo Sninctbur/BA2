@@ -1493,7 +1493,9 @@ function ENT:IsCurrentSchedule() return true end
 function ENT:SetSchedule() end
 
 -- https://wiki.facepunch.com/gmod/NPC:SetTarget
-function ENT:SetTarget() end
+function ENT:SetTarget()
+	self:SetEnemy(enemy)
+end
 
 -- Error handling
 function ENT:GetActiveWeapon()
@@ -1570,11 +1572,11 @@ end
 
 -- EGADS! NPC stub functions that actually do something!
 function ENT:ClearEnemyMemory(enemy, pos)
-	self:SetEnemy(nil);
+	self:SetEnemy(nil)
 end
 
 function ENT:UpdateEnemyMemory(enemy, pos)
-	self:SetEnemy(enemy);
+	self:SetEnemy(enemy)
 end
 
 -- Hello from the past -Sninctbur
