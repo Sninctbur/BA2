@@ -1479,6 +1479,22 @@ function ENT:OnContact(ent)
 	end
 end
 
+-- https://wiki.facepunch.com/gmod/NPC:ClearSchedule
+function ENT:ClearSchedule() end
+
+-- https://wiki.facepunch.com/gmod/Enums/SCHED
+-- SCHED_COMBAT_FACE = 12
+function ENT:GetCurrentSchedule() return 12 end
+
+-- https://wiki.facepunch.com/gmod/NPC:IsCurrentSchedule
+function ENT:IsCurrentSchedule() return true end
+
+-- https://wiki.facepunch.com/gmod/NPC:SetSchedule
+function ENT:SetSchedule() end
+
+-- https://wiki.facepunch.com/gmod/NPC:SetTarget
+function ENT:SetTarget() end
+
 -- Error handling
 function ENT:GetActiveWeapon()
 	return NULL
