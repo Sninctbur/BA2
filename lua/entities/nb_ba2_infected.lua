@@ -1493,7 +1493,7 @@ function ENT:IsCurrentSchedule() return true end
 function ENT:SetSchedule() end
 
 -- https://wiki.facepunch.com/gmod/NPC:SetTarget
-function ENT:SetTarget()
+function ENT:SetTarget(enemy)
 	self:SetEnemy(enemy)
 end
 
