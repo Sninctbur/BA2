@@ -185,7 +185,7 @@ end
 function ENT:IsValidEnemy(e)
 	local ent = e or self:GetEnemy()
 	return IsValid(ent) and ent:GetNoDraw() == false and ((ent:IsNPC()) 
-		or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive() and not ent.BA2_DoNotTarget)
+		or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive() and not ent.BA2_NoClipNoTarget)
 		or (ent:IsNextBot() and !string.StartWith(ent:GetClass(),"nb_ba2_infected")))
 end
 function ENT:GetAllEnemies()
@@ -336,7 +336,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 		elseif not self:GetAttacking() and not self:GetStunned() then
 			-- Todo: End attacking animation if it's still going
 			if (self:IsValidEnemy() or IsValid(self:SearchForEnemy()))
-				and not self:GetEnemy().BA2_DoNotTarget
+				and not self:GetEnemy().BA2_NoClipNoTarget
 				and not (self.BA2_StopTargetingOutsideDetectionRange and path:GetLength() > self.SearchRadius)
 			then -- Pursuit
 				self:PursuitSpeed()

@@ -488,7 +488,7 @@ end
 -- Hooks and timers
 hook.Add("PlayerSpawn","ba2_initSpeed",function(p)
     p.BA2Infection = 0
-    p.BA2_DoNotTarget = false
+    p.BA2_NoClipNoTarget = false
 end)
 
 hook.Add("SetupMove","BA2_GrabSlow",function(p,mv,cmd)
@@ -523,11 +523,47 @@ end)
 
 hook.Add("PlayerNoClip", "BA2_NoClipNoTarget", function(ply, desiredNoClipState)
     if desiredNoClipState and GetConVar("ba2_zom_notargetnoclip"):GetBool() then
-        ply.BA2_DoNotTarget = true
+        ply.BA2_NoClipNoTarget = true
     else
-        ply.BA2_DoNotTarget = false
+        ply.BA2_NoClipNoTarget = false
     end
 end)
+
+-- ULX compatibility
+if ULib and ulx then
+    hook.Add(ULib.HOOK_COMMAND_CALLED, "BA2_NoClipNoTargetULX", function(executor, cmd, args)
+        if cmd == "ulx noclip" then
+            local targetPlayers = args
+
+            if !targetPlayers or #targetPlayers == 0 then
+                targetPlayers = {executor}
+            end
+
+            for i = 1, #targetPlayers do
+                local target
+
+                if type(targetPlayers[i]) == "Player" then
+                    target = targetPlayers[i]
+                else
+                    target = ULib.getUser(targetPlayers[i], true, executor)
+                end
+
+                if !target or !IsValid(target) then continue end
+
+                if !target.NoNoclip then
+                    -- This is a little counterintuitive: 
+                    -- If we're not noclipping, ULX is about to start us and we shouldn't be targeted.
+                    -- If we're currently noclipping, ULX is about to stop us and we should be targeted. 
+                    if target:GetMoveType() == MOVETYPE_WALK and GetConVar("ba2_zom_notargetnoclip"):GetBool() then
+                        target.BA2_NoClipNoTarget = true
+                    elseif target:GetMoveType() == MOVETYPE_NOCLIP then
+                        target.BA2_NoClipNoTarget = false
+                    end
+                end
+            end
+        end
+    end)
+end
 
 timer.Create("BA2_ServerTick",1.25,0,function()
     local entTable = table.Add(player.GetAll(),ents.FindByClass("npc_*"))
