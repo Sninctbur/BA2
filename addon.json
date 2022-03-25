@@ -6,9 +6,6 @@
 	[
 		"*.psd",
 		"*.vcproj",
-		"*.svn*",
-		".git/*",
-		".gitignore",
-		"ReadMeOrIllReadYou.md"
+		"*.svn*"
 	]
 }

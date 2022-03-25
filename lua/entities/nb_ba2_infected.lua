@@ -1085,7 +1085,7 @@ function ENT:OnInjured(dmginfo)
 			elseif randNum == 5 then
 				self.BA2_HeadshotEffect = true
 			else
-				self.BA2_BodyshotEffect = true
+				-- self.BA2_BodyshotEffect = true
 			end
 		end
 	end
