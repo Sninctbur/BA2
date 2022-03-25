@@ -1022,7 +1022,7 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		end
 	-- elseif trace.HitGroup == HITGROUP_STOMACH and self:Health() - dmginfo:GetDamage() <= math.random(-60,-30) then
 	-- 	self.BA2_BodyshotEffect = true
-	-- end
+	end
 
 	if trace.HitGroup == HITGROUP_LEFTARM and self.BA2_LArmDown == nil then
 		self.BA2_LArmDamage = self.BA2_LArmDamage + dmginfo:GetDamage()
