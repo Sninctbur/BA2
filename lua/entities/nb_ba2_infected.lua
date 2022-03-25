@@ -1090,7 +1090,7 @@ function ENT:OnInjured(dmginfo)
 		end
 	end
 
-	if (self:GetAttacking() and (dmginfo:IsDamageType(DMG_SLASH) or dmginfo:IsDamageType(DMG_CRUSH) or dmginfo:IsDamageType(DMG_CLUB) or dmginfo:IsExplosionDamage())) 
+	if (self:GetAttacking() and (dmginfo:IsDamageType(DMG_SLASH) or dmginfo:IsDamageType(DMG_CRUSH) or dmginfo:IsDamageType(DMG_CLUB) or dmginfo:IsExplosionDamage())) -- Optimize this later with bit.bor
 	or (GetConVar("ba2_zom_damagestun"):GetBool() and dmginfo:GetDamage() > self:Health() / 2) then
 		self:ZombieStun()
 	end
@@ -1197,8 +1197,8 @@ function ENT:OnKilled(dmginfo)
 	
 			local headPos = body:GetBonePosition(headBone)
 			local gibs = {
-				"models/ba2/gibs/eyel.mdl",
-				"models/ba2/gibs/eyer.mdl",
+				-- "models/ba2/gibs/eyel.mdl",
+				-- "models/ba2/gibs/eyer.mdl",
 				"models/ba2/gibs/headbackl.mdl",
 				"models/ba2/gibs/headbackr.mdl",
 				"models/ba2/gibs/headfrontl.mdl",
