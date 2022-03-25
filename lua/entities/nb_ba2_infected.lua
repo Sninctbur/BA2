@@ -260,7 +260,7 @@ function ENT:ZombieNav(path)
 				return -1
 			end
 
-			if area:IsUnderwater() and (self.Enemy == nil or self.Enemy:WaterLevel() < 2) then
+			if area:IsUnderwater() and (!IsValid(self.Enemy) or self.Enemy:WaterLevel() < 2) then
 				-- only kill ourselves in water as a last resort
 				cost = cost * 2
 			end
@@ -330,12 +330,20 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			-- Todo: End attacking animation if it's still going
 			if self:IsValidEnemy() or IsValid(self:SearchForEnemy()) then -- Pursuit
 				self:PursuitSpeed()
+				local enemyPos = self:GetEnemy():GetPos()
+				local enemyVel = self:GetEnemy():GetVelocity()
+				-- enemyVel = enemyVel * (self.loco:GetVelocity():Length() / enemyVel:Length())
+				local enemyVelPos = enemyPos + enemyVel
 
 				--self:ChaseEnemy()
-				self.NavTarget = self:GetEnemy():GetPos() -- + (self:GetEnemy():GetVelocity() - (self:GetPos() - self:EyePos())) still working on this vector math
+				if enemyVel:LengthSqr() > .001 and self:EyePos():Dot(self:EyePos() - enemyVelPos) / enemyVelPos:Length() < -1 then -- If readjusting for velocity wouldn't make me run backwards
+					self.NavTarget = enemyVelPos
+				else
+					self.NavTarget = enemyPos
+				end
 			elseif self:GetEnemy() ~= nil and !self:IsValidEnemy() then
 				self:SetEnemy(nil)
-				self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
+				--self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
 
 			elseif IsValid(self:SearchForCorpse()) then -- Move to corpse
 				local corpse = self:SearchForCorpse()
@@ -345,7 +353,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					self:ZombieEat(corpse)
 				else
 					self:SwitchActivity( ACT_WALK )			-- Walk anmimation
-					self.loco:SetDesiredSpeed( 40 )		-- Walk speed
+					self.loco:SetDesiredSpeed( 40 * self.BA2_SpeedMult )		-- Walk speed
 					self.loco:SetAcceleration(400)
 					self.NavTarget = corpsePos
 				end
@@ -499,7 +507,8 @@ function ENT:SearchForEnemy()
 	return minEnt
 end
 function ENT:SearchForCorpse()
-	if #ents.FindByClass("prop_ragdoll") == 0 then return end
+	if !GetConVar("ba2_zom_corpseeat"):GetBool() then return end
+	if #ents.FindByClass("prop_ragdoll") == 0 then return end -- Don't iterate over anything if there are no ragdolls
 
 	local minEnt = nil
 	local minDist = math.huge
@@ -509,7 +518,7 @@ function ENT:SearchForCorpse()
 	
 	for i,ent in pairs(ents.FindInSphere(self:GetPos(),self.SearchRadius / 4)) do
 		if ent:GetClass() == "prop_ragdoll" and ent:GetNoDraw() == false and ent:GetMaterialType() ~= MAT_METAL and !ent.BA2_ZomCorpse then
-			local dist = ent:GetPos():Distance(self:GetPos())
+			local dist = ent:GetPos():DistToSqr(self:GetPos())
 			if dist < minDist then
 				minEnt = ent
 				minDist = dist
@@ -527,7 +536,7 @@ function ENT:HandleStuck()
 	--print(self:EntIndex(),"BA2: Handling stuck")
 	self.loco:ClearStuck()
 
-	if self.BA2_AutoSpawned and self.BA2_CreationTime < CurTime() - 2 then
+	if self.BA2_AutoSpawned and self.BA2_CreationTime > CurTime() - 2 then
 		self:Remove()
 		return
 	end
@@ -998,7 +1007,7 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		self:EmitSound("physics/metal/metal_sheet_impact_bullet2.wav",80,math.random(90,110))
 	end
 	if trace.HitGroup == HITGROUP_HEAD then
-		dmginfo:SetDamage(dmginfo:GetDamage() * 3)
+		dmginfo:SetDamage(dmginfo:GetDamage() * 4)
 
 		if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmginfo:GetDamage() > self:Health() then
 			dmginfo:SetDamage(dmginfo:GetDamage() * 2)
@@ -1011,7 +1020,9 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_misc_headshoteff"):GetBool() and self:Health() - dmginfo:GetDamage() <= math.random(-60,-30) then
 			self.BA2_HeadshotEffect = true
 		end
-	end
+	-- elseif trace.HitGroup == HITGROUP_STOMACH and self:Health() - dmginfo:GetDamage() <= math.random(-60,-30) then
+	-- 	self.BA2_BodyshotEffect = true
+	-- end
 
 	if trace.HitGroup == HITGROUP_LEFTARM and self.BA2_LArmDown == nil then
 		self.BA2_LArmDamage = self.BA2_LArmDamage + dmginfo:GetDamage()
@@ -1052,10 +1063,13 @@ end
 
 function ENT:OnInjured(dmginfo)
 	if dmginfo:IsExplosionDamage() and math.random(1,100) <= dmginfo:GetDamage() then
+		if self.BA2_ArmoredZom then
+			dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_armordamagemult"):GetFloat())
+		end
 		if math.random(self:GetMaxHealth()) <= dmginfo:GetDamage() then
 			local randNum
 			if self:Health() <= dmginfo:GetDamage() then
-				randNum = math.random(5)
+				randNum = math.random(6)
 			else
 				randNum = math.random(4)
 			end
@@ -1068,8 +1082,10 @@ function ENT:OnInjured(dmginfo)
 				self:BreakLLeg(dmginfo)
 			elseif randNum == 4 then
 				self:BreakRLeg(dmginfo)
-			else
+			elseif randNum == 5 then
 				self.BA2_HeadshotEffect = true
+			else
+				self.BA2_BodyshotEffect = true
 			end
 		end
 	end
@@ -1204,9 +1220,48 @@ function ENT:OnKilled(dmginfo)
 			
 			local timer1 = body:EntIndex().."-headshot1"
 			timer.Create(timer1,0.1,math.random(17,20),function()
+				if !IsValid(body) then timer.Destroy(timer1) return end
 				local headBone = body:LookupBone("ValveBiped.Bip01_Head1")
-				if IsValid(body) and headBone ~= nil then
+				if headBone ~= nil then
 					eff:SetOrigin(body:GetBonePosition(headBone))
+					util.Effect("BloodImpact",eff)
+				else
+					timer.Destroy(timer1)
+				end
+			end)
+
+			timer.Start(timer1)
+		end
+	end
+
+	if self.BA2_BodyshotEffect then
+		self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",85)
+
+		local bodyBone = body:LookupBone("ValveBiped.Bip01_Spine")
+		if bodyBone ~= nil then
+			body:EmitSound("ba2_headlessbleed")
+			local bodyPos = body:GetBonePosition(bodyBone)
+			local gibs = {
+				"models/ba2/gibs/organs.mdl",
+				"models/ba2/gibs/midorgans.mdl"
+			}
+	
+			for i,mdl in pairs(gibs) do
+				self:CreateGib(bodyPos,mdl,dmginfo:GetDamageForce():GetNormalized() * -60)
+			end
+
+			local eff = EffectData()
+			eff:SetFlags(6)
+			eff:SetColor(0)
+			eff:SetScale(10)
+			eff:SetEntity(body)
+			eff:SetAttachment(6)
+			
+			local timer1 = body:EntIndex().."-headshot1"
+			timer.Create(timer1,0.1,math.random(17,20),function()
+				local bodyBone = body:LookupBone("ValveBiped.Bip01_Spine")
+				if IsValid(body) and bodyBone ~= nil then
+					eff:SetOrigin(body:GetBonePosition(bodyBone))
 					util.Effect("BloodImpact",eff)
 				else
 					timer.Destroy(timer1)
@@ -1310,8 +1365,10 @@ function ENT:ZombieVox(sound)
 	end
 end
 function ENT:SwitchActivity(act)
-	if self.loco:GetVelocity():LengthSqr() < 20 and self:GetActivity() ~= ACT_IDLE then
-		self:StartActivity(ACT_IDLE)
+	if self.loco:GetVelocity():LengthSqr() < 1 then
+		if self:GetActivity() ~= ACT_IDLE then
+			self:StartActivity(ACT_IDLE)
+		end
 	elseif self:GetActivity() ~= act then
 		self.NextStepTime = nil
 		if act ~= ACT_IDLE and self.loco:GetVelocity():LengthSqr() > 20 then
