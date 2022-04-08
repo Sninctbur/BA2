@@ -1020,8 +1020,8 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_misc_headshoteff"):GetBool() and self:Health() - dmginfo:GetDamage() <= math.random(-60,-30) then
 			self.BA2_HeadshotEffect = true
 		end
-	-- elseif trace.HitGroup == HITGROUP_STOMACH and self:Health() - dmginfo:GetDamage() <= math.random(-60,-30) then
-	-- 	self.BA2_BodyshotEffect = true
+	elseif trace.HitGroup == HITGROUP_STOMACH and self:Health() - dmginfo:GetDamage() <= math.random(-20,-10) then
+		self.BA2_BodyshotEffect = true
 	end
 
 	if trace.HitGroup == HITGROUP_LEFTARM and self.BA2_LArmDown == nil then
@@ -1085,7 +1085,7 @@ function ENT:OnInjured(dmginfo)
 			elseif randNum == 5 then
 				self.BA2_HeadshotEffect = true
 			else
-				-- self.BA2_BodyshotEffect = true
+				self.BA2_BodyshotEffect = true
 			end
 		end
 	end
