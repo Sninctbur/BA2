@@ -264,7 +264,7 @@ function BA2_ZombieGrab(zom,ent)
         end
 
         ent:ViewPunch(Angle(10,0,0))
-    else
+    elseif ent:IsNPC() then
         ent.GrabPos = ent:GetPos()
         ent:StopMoving()
     end
