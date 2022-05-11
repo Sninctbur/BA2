@@ -331,16 +331,17 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			if self:IsValidEnemy() or IsValid(self:SearchForEnemy()) then -- Pursuit
 				self:PursuitSpeed()
 				local enemyPos = self:GetEnemy():GetPos()
-				local enemyVel = self:GetEnemy():GetVelocity()
+				--local enemyVel = self:GetEnemy():GetVelocity()
 				-- enemyVel = enemyVel * (self.loco:GetVelocity():Length() / enemyVel:Length())
-				local enemyVelPos = enemyPos + enemyVel
+				--local enemyVelPos = enemyPos + enemyVel
 
 				--self:ChaseEnemy()
-				if enemyVel:LengthSqr() > .001 and self:EyePos():Dot(self:EyePos() - enemyVelPos) / enemyVelPos:Length() < -1 then -- If readjusting for velocity wouldn't make me run backwards
-					self.NavTarget = enemyVelPos
-				else
-					self.NavTarget = enemyPos
-				end
+				-- if enemyVel:LengthSqr() > .001 and self:EyePos():Dot(self:EyePos() - enemyVelPos) / enemyVelPos:Length() < -1 then -- If readjusting for velocity wouldn't make me run backwards
+				-- 	self.NavTarget = enemyVelPos
+				-- else
+				-- 	self.NavTarget = enemyPos
+				-- end
+				self.NavTarget = enemyPos
 			elseif self:GetEnemy() ~= nil and !self:IsValidEnemy() then
 				self:SetEnemy(nil)
 				--self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
