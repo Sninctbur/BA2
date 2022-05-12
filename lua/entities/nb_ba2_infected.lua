@@ -1260,6 +1260,7 @@ function ENT:OnKilled(dmginfo)
 			
 			local timer1 = body:EntIndex().."-headshot1"
 			timer.Create(timer1,0.1,math.random(17,20),function()
+				if !IsValid(body) then return end
 				local bodyBone = body:LookupBone("ValveBiped.Bip01_Spine")
 				if IsValid(body) and bodyBone ~= nil then
 					eff:SetOrigin(body:GetBonePosition(bodyBone))
