@@ -1244,7 +1244,10 @@ function ENT:OnKilled(dmginfo)
 			local bodyPos = body:GetBonePosition(bodyBone)
 			local gibs = {
 				"models/ba2/gibs/organs.mdl",
-				"models/ba2/gibs/midorgans.mdl"
+				"models/ba2/gibs/midorgans.mdl",
+				"models/ba2/gibs/headbackl.mdl",
+				"models/ba2/gibs/headbackr.mdl",
+				"models/ba2/gibs/headfrontl.mdl",
 			}
 	
 			for i,mdl in pairs(gibs) do
