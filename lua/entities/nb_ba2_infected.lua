@@ -1007,21 +1007,23 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 
 		self:EmitSound("physics/metal/metal_sheet_impact_bullet2.wav",80,math.random(90,110))
 	end
+
+	local dmgAmount = dmginfo:GetDamage()
+	if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmgAmount >= self:Health() then
+		dmgAmount = dmgAmount * 2
+	end
 	if trace.HitGroup == HITGROUP_HEAD then
 		dmginfo:SetDamage(dmginfo:GetDamage() * 4)
-
-		if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmginfo:GetDamage() > self:Health() then
-			dmginfo:SetDamage(dmginfo:GetDamage() * 2)
-		end
+		dmgAmount = dmgAmount * 4
 
 		if BA2_GetMaggotMode() then
 			self:EmitSound("player/crit_hit"..math.random(2,6)..".wav",95)
 		end
 
-		if GetConVar("ba2_misc_headshoteff"):GetBool() and self:Health() - dmginfo:GetDamage() <= math.random(-60,-30) then
+		if GetConVar("ba2_misc_headshoteff"):GetBool() and self:Health() - dmgAmount <= math.random(-60,-30) then
 			self.BA2_HeadshotEffect = true
 		end
-	elseif self:Health() - dmginfo:GetDamage() <= math.random(-30,-15) then
+	elseif self:Health() - dmgAmount <= math.random(-30,-15) then
 		if trace.HitGroup == HITGROUP_STOMACH then
 			self.BA2_BodyshotEffect = true
 		elseif trace.HitGroup == HITGROUP_CHEST then
