@@ -1010,7 +1010,7 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 
 	local dmgAmount = dmginfo:GetDamage()
 	if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmgAmount >= self:Health() then
-		dmgAmount = dmgAmount * 2
+		dmgAmount = dmgAmount * 1.5
 	end
 	if trace.HitGroup == HITGROUP_HEAD then
 		dmginfo:SetDamage(dmginfo:GetDamage() * 4)
@@ -1258,7 +1258,7 @@ function ENT:OnKilled(dmginfo)
 				"models/ba2/gibs/headbackl.mdl",
 				"models/ba2/gibs/headbackr.mdl",
 				"models/ba2/gibs/headfrontl.mdl",
-			},-.5)
+			},-.35)
 		end
 	end
 
@@ -1271,7 +1271,7 @@ function ENT:OnKilled(dmginfo)
 				"models/ba2/gibs/headbackl.mdl",
 				"models/ba2/gibs/headbackr.mdl",
 				"models/ba2/gibs/headfrontl.mdl",
-				"models/ba2/gibs/headfrontr.mdl",
+				"models/ba2/gibs/headbackl.mdl",
 			},-.5)
 		end
 	end
