@@ -26,18 +26,23 @@ function ENT:Initialize()
 	--self.InfBody = "models/Humans/Group01/male_02.mdl"
 
 	if SERVER then
+		local mins = self:OBBMins()
+		local maxs = self:OBBMaxs()
+
 		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
 		self.HullType = HULL_HUMAN
 		local hp = GetConVar("ba2_zom_health"):GetInt()
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)
-		self:SetCollisionBounds(self:OBBMins(),self:OBBMaxs())
-		self:SetSolid(SOLID_BBOX)
-		self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
+
+		self:SetCollisionBounds(mins,maxs)
+		--self:SetSolid(SOLID_BBOX)
+		--self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
 		--self:SetMoveType(MOVETYPE_STEP)
 		self:SetCollisionGroup(COLLISION_GROUP_NPC)
-		self:PhysicsInitStatic(SOLID_BBOX)
+		self:PhysicsInitStatic(SOLID_VPHYSICS)
 		self:SetSolidMask(MASK_NPCSOLID)
+		self:EnableCustomCollisions(true)
 		self:SetFriction(0)
 		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
@@ -101,7 +106,7 @@ function ENT:Initialize()
 
 			if self.InfBody ~= nil then
 				local model
-				if self.cheapleEgg and math.random(1,100) <= 1 then
+				if self.cheapleEgg and math.random(1,1000) <= 1 then
 					model = "models/Humans/Group01/Male_Cheaple.mdl"
 				elseif istable(self.InfBody) then
 					model = self.InfBody[math.random(1,#self.InfBody)]
@@ -555,6 +560,7 @@ function ENT:HandleStuck()
 	-- else
 	-- 	self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200
 	-- end -- Jump behavior is temporarily disabled on account of being garbo
+
 	self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200 
 	--self:MoveToPos(self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200,{maxage = 3}) -- Unoptimized, apparently
 	for i = 1,125 do
@@ -1062,6 +1068,9 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 	if trace.HitGroup ~= HITGROUP_HEAD then
 		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_nonheadshotmult"):GetFloat())
 	end
+	if GetConVar("ba2_misc_realistic"):GetBool() and trace.HitGroup == HITGROUP_CHEST and dmgAmount >= self:Health() and dmginfo:GetAmmoType() == 3 then
+		self.BA2_PoliticalJoke = true
+	end
 
 	if self.BA2_Crippled and self:GetActivity() == ACT_IDLE then
 		self:SetSequence("crawlidle")
@@ -1119,6 +1128,12 @@ function ENT:OnKilled(dmginfo)
 
 	if string.find(self.InfBody:GetModel(),"group03m") and math.random(1,100) <= GetConVar("ba2_zom_medicdropchance"):GetInt() then
 		local vial = ents.Create("item_healthvial")
+		vial:SetPos(self:GetPos() + Vector(0,0,40))
+		vial:SetVelocity(VectorRand() * 2)
+		vial:Spawn()
+		vial:Activate()
+	elseif self.cheapleEgg and self.InfBody:GetModel() == "models/humans/group01/male_cheaple.mdl" and #ents.FindByClass("ba2_radiobaby") == 0 then
+		local vial = ents.Create("ba2_radiobaby")
 		vial:SetPos(self:GetPos() + Vector(0,0,40))
 		vial:SetVelocity(VectorRand() * 2)
 		vial:Spawn()
@@ -1273,6 +1288,17 @@ function ENT:OnKilled(dmginfo)
 				"models/ba2/gibs/headfrontl.mdl",
 				"models/ba2/gibs/headbackl.mdl",
 			},-.5)
+		end
+	end
+
+	if self.BA2_PoliticalJoke then
+		self:EmitSound("npc/barnacle/barnacle_crunch"..math.random(2,3)..".wav",85)
+
+		local bodyBone = body:LookupBone("ValveBiped.Bip01_Spine2")
+		if bodyBone ~= nil then
+			makeGibs("ValveBiped.Bip01_Spine2",{
+				"models/ba2/gibs/lungright.mdl"
+			},.35)
 		end
 	end
 
@@ -1477,6 +1503,8 @@ function ENT:OnContact(ent)
 		dmg:SetDamageType(DMG_DISSOLVE)
 		dmg:SetDamage(self:Health())
 		self:TakeDamageInfo(dmg)
+	-- elseif string.StartWith(class,"nb_ba2_infected") and self.loco:IsStuck() then
+	-- 	constraint.NoCollide(self,ent,0,0)
 	end
 end
 

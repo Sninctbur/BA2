@@ -108,6 +108,7 @@ CreateConVar("ba2_misc_gibdecals",1,FCVAR_ARCHIVE,[[If enabled, zombie gibs will
 
 concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
 --CreateConVar("ba2_misc_kidsmode",0,FCVAR_ARCHIVE,[[If enabled, this mod will become less appalling to the ESRB.]])
+CreateConVar("ba2_misc_realistic",0,nil,"If enabed, a 9mm bullet will blow the lung out of the body.")
 
 concommand.Add("ba2_gasmask",BA2_ToggleGasmask,nil)
 concommand.Add("ba2_dgasmask",BA2_DropGasmask,nil)
@@ -279,7 +280,7 @@ function BA2_ZombieGrab(zom,ent)
             if ent:IsPlayer() then
                 ent.BA2Grabbed = true
             else
-                ent:SetPos(ent.GrabPos)
+                ent:SetPos(ent.GrabPos or ent:GetPos())
             end
         end
     end)
@@ -311,6 +312,7 @@ end
 function BA2_GetMaggotMode()
     return BA2_MaggotMode ~= nil
 end
+
 
 function BA2_DestroyHS()
     local hs = ents.FindByClass("ba2_hordespawner")
