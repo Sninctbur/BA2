@@ -39,10 +39,10 @@ function ENT:Initialize()
 		--self:SetSolid(SOLID_BBOX)
 		--self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
 		--self:SetMoveType(MOVETYPE_STEP)
-		self:SetCollisionGroup(COLLISION_GROUP_WORLD)
 		self:PhysicsInitStatic(SOLID_BBOX)
 		self:SetSolidMask(MASK_NPCSOLID)
 		self:EnableCustomCollisions(true)
+		self:SetCustomCollisionCheck(true)
 		self:SetFriction(0)
 		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
@@ -542,7 +542,7 @@ end
 
 function ENT:HandleStuck()
 	--print(self:EntIndex(),"BA2: Handling stuck")
-	self.loco:ClearStuck()
+	self:SetCollisionGroup(COLLISION_GROUP_WORLD)
 
 	if self.BA2_AutoSpawned and self.BA2_CreationTime > CurTime() - 2 then
 		self:Remove()
@@ -566,6 +566,7 @@ function ENT:HandleStuck()
 	self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200 
 	--self:MoveToPos(self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200,{maxage = 3}) -- Unoptimized, apparently
 	for i = 1,125 do
+		self:PursuitSpeed()
 		self.loco:FaceTowards(self.NavTarget)
 		self.loco:Approach(self.NavTarget,1)
 		-- if !self.loco:IsOnGround() then
@@ -576,6 +577,9 @@ function ENT:HandleStuck()
 		end
 		coroutine.yield()
 	end
+
+	self.loco:ClearStuck()
+	self:SetCollisionGroup(COLLISION_GROUP_NONE)
 end
 
 -- function ENT:OnUnStuck()

@@ -482,6 +482,7 @@ hook.Add("OnEntityCreated","ba2_npcZomRelation",function(npc)
     end
 end)
 
+
 timer.Create("BA2_ServerTick",1.25,0,function()
     local entTable = table.Add(player.GetAll(),ents.FindByClass("npc_*"))
 
