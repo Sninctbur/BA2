@@ -106,7 +106,7 @@ function ENT:Initialize()
 
 			if self.InfBody ~= nil then
 				local model
-				if self.cheapleEgg and math.random(1,1000) <= 1 then
+				if self.cheapleEgg and math.random(1,666) <= 1 then
 					model = "models/Humans/Group01/Male_Cheaple.mdl"
 				elseif istable(self.InfBody) then
 					model = self.InfBody[math.random(1,#self.InfBody)]
@@ -383,7 +383,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 				--self.loco:FaceTowards(self.NavTarget)
 				local distToTarget = self:GetPos():Distance(self.NavTarget)
 
-				self.NavTarget = LerpVector(math.Clamp(500 / distToTarget,0,1),self:GetPos(),self.NavTarget) -- Set our goal position closer to ourselves if it gets really far away
+				--self.NavTarget = LerpVector(math.Clamp(500 / distToTarget,0,1),self:GetPos(),self.NavTarget) -- Set our goal position closer to ourselves if it gets really far away
 
 				if path:GetAge() > math.Clamp(distToTarget / 1000,3,10) then
 					pathComplete = self:ZombieNav(path)	-- Compute the path towards the enemies position
