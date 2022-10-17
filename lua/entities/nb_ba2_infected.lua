@@ -28,6 +28,8 @@ function ENT:Initialize()
 	if SERVER then
 		local mins = self:OBBMins()
 		local maxs = self:OBBMaxs()
+		-- min: -13,-13,-5.94
+		-- max: 13,13,72
 
 		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
 		self.HullType = HULL_HUMAN
@@ -41,6 +43,7 @@ function ENT:Initialize()
 		--self:SetMoveType(MOVETYPE_STEP)
 		self:PhysicsInitStatic(SOLID_BBOX)
 		self:SetSolidMask(MASK_NPCSOLID)
+		self:SetSolid(SOLID_VPHYSICS)
 		self:EnableCustomCollisions(true)
 		self:SetCustomCollisionCheck(true)
 		self:SetFriction(0)
@@ -462,7 +465,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 	end
 end
 function ENT:PursuitSpeed()
-	local PursuitConfig = GetConVar("ba2_zom_pursuitspeed"):GetInt()
+	local PursuitConfig = self.PursuitSpeedOverride or GetConVar("ba2_zom_pursuitspeed"):GetInt()
 	if self.BA2_Crippled then
 		self:SwitchActivity(ACT_WALK)
 		self.loco:SetDesiredSpeed(45 * self.BA2_SpeedMult)
@@ -800,9 +803,9 @@ function ENT:ZombieSmash(ent)
 								end)
 							end
 						else
-							ent:Fire("SetSpeed",ent:GetInternalVariable("Speed") * 2.5)
+							ent:Fire("SetSpeed",(ent:GetInternalVariable("Speed") * 2.5) .. "")
 							ent:Fire("Open")
-							ent:Fire("SetSpeed",ent:GetInternalVariable("Speed"))
+							ent:Fire("SetSpeed",ent:GetInternalVariable("Speed") .. "")
 							ent.BA2_DoorHealth = 200
 						end
 					elseif math.random(1,100) >= ent.BA2_DoorHealth then
@@ -1021,21 +1024,21 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 	end
 
 	local dmgAmount = dmginfo:GetDamage()
-	if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmgAmount >= self:Health() then
-		dmgAmount = dmgAmount * 1.5
+	if dmginfo:IsDamageType(DMG_BUCKSHOT) and dmgAmount <= 50 and dmgAmount >= self:Health() then
+		dmgAmount = dmgAmount * 5
 	end
 	if trace.HitGroup == HITGROUP_HEAD then
-		dmginfo:SetDamage(dmginfo:GetDamage() * 4)
-		dmgAmount = dmgAmount * 4
+		dmginfo:SetDamage(dmginfo:GetDamage() * 3)
+		dmgAmount = dmgAmount * 3
 
 		if BA2_GetMaggotMode() then
 			self:EmitSound("player/crit_hit"..math.random(2,6)..".wav",95)
 		end
 
-		if GetConVar("ba2_misc_headshoteff"):GetBool() and self:Health() - dmgAmount <= math.random(-60,-30) then
+		if GetConVar("ba2_misc_headshoteff"):GetBool() and dmgAmount >= math.random(100,180) then
 			self.BA2_HeadshotEffect = true
 		end
-	elseif self:Health() - dmgAmount <= math.random(-30,-15) then
+	elseif dmgAmount >= math.random(30,80) then
 		if trace.HitGroup == HITGROUP_STOMACH then
 			self.BA2_BodyshotEffect = true
 		elseif trace.HitGroup == HITGROUP_CHEST then
@@ -1045,13 +1048,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 
 	if trace.HitGroup == HITGROUP_LEFTARM and self.BA2_LArmDown == nil then
 		self.BA2_LArmDamage = self.BA2_LArmDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * .5 then
+		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * .75 then
 			self:BreakLArm(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	elseif trace.HitGroup == HITGROUP_RIGHTARM and self.BA2_RArmDown == nil then
 		self.BA2_RArmDamage = self.BA2_RArmDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * .5 then
+		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * .75 then
 			self:BreakRArm(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
@@ -1059,13 +1062,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 
 	if trace.HitGroup == HITGROUP_LEFTLEG and self.BA2_LLegDown == nil then
 		self.BA2_LLegDamage = self.BA2_LLegDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() * .75 then
+		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() then
 			self:BreakLLeg(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
 	elseif trace.HitGroup == HITGROUP_RIGHTLEG and self.BA2_RLegDown == nil then
 		self.BA2_RLegDamage = self.BA2_RLegDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() * .75 then
+		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() then
 			self:BreakRLeg(dmginfo)
 		end
 		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
@@ -1315,7 +1318,7 @@ function ENT:OnKilled(dmginfo)
 	end
 	local corpseLife = GetConVar("ba2_misc_corpselife"):GetFloat()
 	if corpseLife >= 0 then
-		body:Fire("FadeAndRemove",0.5,corpseLife)
+		body:Fire("FadeAndRemove","0.5",corpseLife)
 	end
 
 	-- if BA2_GetMaggotMode() then
