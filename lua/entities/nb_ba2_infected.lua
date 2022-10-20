@@ -26,8 +26,8 @@ function ENT:Initialize()
 	--self.InfBody = "models/Humans/Group01/male_02.mdl"
 
 	if SERVER then
-		local mins = self:OBBMins()
-		local maxs = self:OBBMaxs()
+		local mins = Vector(-10,-10,-5.94)
+		local maxs = Vector(10,10,72)
 		-- min: -13,-13,-5.94
 		-- max: 13,13,72
 
@@ -46,12 +46,11 @@ function ENT:Initialize()
 		--self:SetSolid(SOLID_BBOX)
 		--self:PhysicsInitBox(self:OBBMins(),self:OBBMaxs())
 		--self:SetMoveType(MOVETYPE_STEP)
-		self:PhysicsInitStatic(SOLID_BBOX)
-		self:SetSolidMask(MASK_NPCSOLID)
-		self:SetSolid(SOLID_VPHYSICS)
-		self:EnableCustomCollisions(true)
-		self:SetCustomCollisionCheck(true)
-		self:SetFriction(0)
+		-- self:PhysicsInitStatic(SOLID_VPHYSICS)
+		-- self:SetSolidMask(MASK_NPCSOLID)
+		-- --self:SetSolid(SOLID_VPHYSICS)
+		-- self:EnableCustomCollisions(true)
+		-- self:SetCustomCollisionCheck(true)
 		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
 		
@@ -75,7 +74,7 @@ function ENT:Initialize()
 		timer.Simple(0,function()
 			if not IsValid(self) then return end
 
-			self:GetPhysicsObject():SetMass(90)
+			--self:GetPhysicsObject():SetMass(90)
 
 			-- if BA2_GetMaggotMode() then
 			-- 	self:SetModel("models/player/soldier.mdl")
@@ -449,8 +448,10 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					end
 
 					if GetConVar("ba2_zom_breakobjects"):GetBool() and tr ~= nil and tr.Hit and tr2.Hit and !traceEnts[tr2.Hit] and !self:VisibleVec(self:GetEnemy():GetPos()) and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
+						path:Invalidate()
 						self:ZombieSmash(tr.Entity)
-					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) < 40 and self:VisibleVec(self:GetEnemy():GetPos()) and !(self:GetEnemy():IsPlayer() and self:GetEnemy():InVehicle()) then
+					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) <= 60 and self:VisibleVec(self:GetEnemy():GetPos()) and !(self:GetEnemy():IsPlayer() and self:GetEnemy():InVehicle()) then
+						path:Invalidate()
 						if GetConVar("ba2_zom_attackmode"):GetBool() then
 							self:ZombieAttackAlt(self:GetEnemy())
 						else
@@ -1056,13 +1057,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * .75 then
 			self:BreakLArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
 	elseif trace.HitGroup == HITGROUP_RIGHTARM and self.BA2_RArmDown == nil then
 		self.BA2_RArmDamage = self.BA2_RArmDamage + dmginfo:GetDamage()
 		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * .75 then
 			self:BreakRArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
 	end
 
 	if trace.HitGroup == HITGROUP_LEFTLEG and self.BA2_LLegDown == nil then
@@ -1070,13 +1071,13 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() then
 			self:BreakLLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
 	elseif trace.HitGroup == HITGROUP_RIGHTLEG and self.BA2_RLegDown == nil then
 		self.BA2_RLegDamage = self.BA2_RLegDamage + dmginfo:GetDamage()
 		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() then
 			self:BreakRLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat())
+		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
 	end
 
 	if trace.HitGroup ~= HITGROUP_HEAD then
