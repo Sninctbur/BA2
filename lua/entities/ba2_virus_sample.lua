@@ -9,6 +9,8 @@ ENT.Type = "anim"
 ENT.Category = "Bio-Annihilation II"
 ENT.Spawnable = true
 
+ENT.ImmuneToBreakTime = 0
+
 function ENT:Initialize()
     self:SetModel("models/ba2/objects/ba2_virus_sample.mdl")
     
@@ -27,6 +29,8 @@ function ENT:Initialize()
 end
 
 function ENT:VialBreak(ent)
+    if self.ImmuneToBreakTime >= CurTime() then return end
+
     self:PhysicsDestroy() -- Prevents double collisions
     self:EmitSound("weapons/jar_explode.wav")
 
@@ -68,15 +72,15 @@ end
 
 function ENT:PhysicsCollide(data,col)
     local l = self:GetVelocity():Length()
-    if data.HitEntity:GetClass() ~= "func_breakable_surf" and l >= 100 then -- It's fun to throw it through windows
-        util.Decal("BA2_VirusBloodStain",data.HitPos - data.HitNormal,data.HitPos + data.HitNormal)
+    if self.ImmuneToBreakTime < CurTime() and data.HitEntity:GetClass() ~= "func_breakable_surf" and l >= 100 then -- It's fun to throw it through windows
+        util.Decal("BA2_VirusBloodStain",data.HitPos - data.HitNormal,data.HitPos + data.HitNormal,self)
         self:VialBreak(data.HitEntity)
     elseif l >= 25 then
         self:EmitSound("physics/glass/glass_bottle_impact_hard"..math.random(1,3)..".wav",75,100,math.Clamp(data.Speed / 100,.25,1))
     end
 end
 
-function ENT:OnTakeDamage()
-    util.Decal("BA2_VirusBloodStain",self:GetPos(),self:GetPos() + Vector(0,0,-750))
+function ENT:OnTakeDamage(dmginfo)
+    util.Decal("BA2_VirusBloodStain",self:GetPos(),self:GetPos() + Vector(0,0,-750),self)
     self:VialBreak(nil)
 end
