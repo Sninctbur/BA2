@@ -33,7 +33,12 @@ function ENT:Initialize()
 
 		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
 		self.HullType = HULL_HUMAN
-		local hp = GetConVar("ba2_zom_health"):GetInt()
+		local hp = 100
+		if self.BA2_HPInherit then
+			hp = self.BA2_HPInherit
+		else
+			hp = GetConVar("ba2_zom_health"):GetInt()
+		end
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)
 

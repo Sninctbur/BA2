@@ -99,6 +99,9 @@ function BA2_RaiseZombie(ent)
     if table.HasValue(armoredModels,zom.InfBody) then
         zom.BA2_ArmoredZom = true
     end
+    if ent.BA2_HPInherit then
+        zom.BA2_HPInherit = ent.BA2_HPInherit
+    end
 
     for i = 1,ent:GetNumBodyGroups() do
         table.insert(zom.InfBodyGroups,ent:GetBodygroup(i))

@@ -51,6 +51,7 @@ CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise n
     More zombies means more difficulty - for both you and your machine.
     Set to 0 to enable expert mode: unlimited capacity.]],0)
 CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
+CreateConVar("ba2_inf_inherithealth",1,FCVAR_ARCHIVE,[[If enabled, risen players and NPCs keep the max health they had in life.]])
 concommand.Add("ba2_inf_deleteclouds",BA2_DestroyClouds,nil,"Destroys all Contaminant Clouds on the map, as well as the Air Waste if it exists.")
 
 CreateConVar("ba2_zom_pursuitspeed",1,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
@@ -198,6 +199,7 @@ function BA2_InfectionDeath(ent,inflict,killer,dmg)
         local riseTime = GetConVar("ba2_zom_emergetime"):GetFloat()
 
         if riseTime == 0 then
+            ent.BA2_HPInherit = ent:GetMaxHealth() or 100
             BA2_RaiseZombie(ent)
         else
             local body = ents.Create("prop_ragdoll")
@@ -230,6 +232,8 @@ function BA2_InfectionDeath(ent,inflict,killer,dmg)
                     body.InfVoice = PlyVo
                 end
             end
+
+            body.BA2_HPInherit = ent:GetMaxHealth() or 100
 
             body:Spawn()
             body:Activate()
