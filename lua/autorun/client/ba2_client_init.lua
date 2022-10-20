@@ -405,10 +405,10 @@ hook.Add("PopulateToolMenu","ba2_options",function(panel)
 
         panel:CheckBox("Virus Must Kill to Raise","ba2_inf_killtoraise")
         panel:ControlHelp("The Bio-Virus or one of its hosts must directly kill the victim to raise them into a zombie")
+        panel:CheckBox("Inherit Health","ba2_inf_inherithealth")
+        panel:ControlHelp("Risen players and NPCs keep the max health they had in life")
         panel:CheckBox("Romero Mode","ba2_inf_romeromode")
         panel:ControlHelp("All dead players and NPCs raise as zombies, regardless of infection")
-        panel:CheckBox("Inherit Health","ba2_zom_inherithealth")
-        panel:ControlHelp("Risen players and NPCs keep the max health they had in life")
 
         panel:NumSlider("Maximum Zombies","ba2_inf_maxzoms",0,100,0)
         panel:ControlHelp("New zombies will not raise if there are this many zombies alive")
