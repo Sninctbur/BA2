@@ -106,7 +106,16 @@ function ENT:SpawnZoms(amnt)
                             for i,ent in pairs(spawnEnts) do
                                 local dist = nav:GetCenter():Distance(ent:GetPos())
                                 if dist <= maxDist and dist > minDist then
-                                    table.insert(navsInRange,nav)
+                                    local tr = util.TraceHull({
+                                        start = nav:GetCenter(),
+                                        endpos = nav:GetCenter(),
+                                        mins = Vector( -16, -16, 0 ),
+	                                    maxs = Vector( 16, 16, 71 )
+                                    })
+
+                                    if !tr.Hit then
+                                        table.insert(navsInRange,nav)
+                                    end
                                 end
                             end
                         end
