@@ -261,20 +261,14 @@ end
 
 function BA2_ZombieGrab(zom,ent)
     if ent:IsPlayer() then
-        if ent.InitWalk == nil then
-            ent.InitWalk = ent:GetWalkSpeed()
-        end
-        if ent.InitRun == nil then
-            ent.InitRun = ent:GetRunSpeed()
-        end
-
         ent:ViewPunch(Angle(10,0,0))
+        ent.BA2Grabbed = true
     elseif ent:IsNPC() then
         ent.GrabPos = ent:GetPos()
         ent:StopMoving()
     end
 
-    timer.Create(zom:EntIndex().."-grab",0,0,function()
+    timer.Create(zom:EntIndex().."-grab",0.1,0,function()
         if !IsValid(zom) or !IsValid(ent) or (ent:IsPlayer() and !ent:Alive()) or !zom:GetAttacking() then
             if ent:IsPlayer() then
                 ent.BA2Grabbed = nil
@@ -457,7 +451,7 @@ hook.Add("PlayerSpawn","ba2_initSpeed",function(p)
 end)
 
 hook.Add("SetupMove","BA2_GrabSlow",function(p,mv,cmd)
-    if p.BA2Grabbed == true then
+    if p.BA2Grabbed then
         mv:SetMaxClientSpeed(20)
     end
 end)

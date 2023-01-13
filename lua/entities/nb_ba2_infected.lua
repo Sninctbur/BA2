@@ -51,7 +51,7 @@ function ENT:Initialize()
 		-- --self:SetSolid(SOLID_VPHYSICS)
 		-- self:EnableCustomCollisions(true)
 		-- self:SetCustomCollisionCheck(true)
-		self.loco:SetStepHeight(36)
+		self.loco:SetStepHeight(60)
 		self.loco:SetJumpHeight(80)
 		
 		for i,npc in pairs(ents.FindByClass("npc_*")) do
@@ -314,10 +314,14 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 		if GetConVar("ai_disabled"):GetBool() then
 			self:SwitchActivity( ACT_IDLE )
 			-- n o t h i n g
-		elseif self:WaterLevel() == 3 then
+		elseif self:WaterLevel() == 3 or (self.BA2_Crippled and self:WaterLevel() >= 1) then
 			--self:SetSequence("Choked_Barnacle")
 			self:ResetSequenceInfo()
-			self:ResetSequence("fall_0"..math.random(1,9))
+			if (self.BA2_Crippled and self:WaterLevel() == 1) then
+				self:ResetSequence("crawlgrabloop")
+			else
+				self:ResetSequence("fall_0"..math.random(1,9))
+			end
 
 			self.loco:SetVelocity(Vector(0,0,-5))
 
@@ -335,9 +339,9 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			dmg:SetInflictor(game.GetWorld())
 			self:TakeDamageInfo(dmg)
 			coroutine.wait(1)
-		-- elseif self.loco:IsClimbingOrJumping() then
-			-- self:SwitchActivity(ACT_IDLE)
-			-- self:SetSequence("fall_0"..math.random(1,9))
+		elseif !self.loco:IsOnGround() then
+			--self:SwitchActivity(ACT_IDLE)
+			--self:SetSequence("fall_0"..math.random(1,9))
 		elseif not self:GetAttacking() and not self:GetStunned() then
 			-- Todo: End attacking animation if it's still going
 			if self:IsValidEnemy() or IsValid(self:SearchForEnemy()) then -- Pursuit
@@ -365,7 +369,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 				if self:GetPos():DistToSqr(corpsePos) <= 2500 then
 					self:ZombieEat(corpse)
 				else
-					self:SwitchActivity( ACT_WALK )			-- Walk anmimation
+					self:SwitchActivity( ACT_WALK )			-- Walk animation
 					self.loco:SetDesiredSpeed( 40 * self.BA2_SpeedMult )		-- Walk speed
 					self.loco:SetAcceleration(400)
 					self.NavTarget = corpsePos
@@ -373,7 +377,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 
 			else -- Pacing
-				self:SwitchActivity( ACT_WALK )			-- Walk anmimation
+				self:SwitchActivity( ACT_WALK )			-- Walk animation
 				self.loco:SetDesiredSpeed( 35 * self.BA2_SpeedMult )		-- Walk speed
 				self.loco:SetAcceleration(400)
 				--self:EmitSound("groan")
@@ -427,6 +431,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					-- end
 				end
 
+				-- Attack behavior
 				if self:IsValidEnemy() then
 					local tr = nil
 					local tr2 = nil
@@ -466,6 +471,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 			end
 		end
 
+		-- Refresh convars
 		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
 		coroutine.yield()
 	end
@@ -1121,7 +1127,7 @@ function ENT:OnInjured(dmginfo)
 		end
 	end
 
-	if (self:GetAttacking() and (dmginfo:IsDamageType(DMG_SLASH) or dmginfo:IsDamageType(DMG_CRUSH) or dmginfo:IsDamageType(DMG_CLUB) or dmginfo:IsExplosionDamage())) -- Optimize this later with bit.bor
+	if (self:GetAttacking() and bit.bor(dmginfo:GetDamageType(),DMG_SLASH + DMG_CRUSH + DMG_CLUB + DMG_BLAST))
 	or (GetConVar("ba2_zom_damagestun"):GetBool() and dmginfo:GetDamage() > self:Health() / 2) then
 		self:ZombieStun()
 	end
