@@ -55,7 +55,7 @@ function ENT:Initialize()
 		self.loco:SetJumpHeight(80)
 		
 		for i,npc in pairs(ents.FindByClass("npc_*")) do
-			if npc:IsNPC() then
+			if IsValid(npc) and npc:IsNPC() then
 				if npc.IsVJBaseSNPC then
 					table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
 					table.insert(npc.CurrentPossibleEnemies,z)
