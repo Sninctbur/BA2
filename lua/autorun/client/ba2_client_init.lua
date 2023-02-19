@@ -257,7 +257,7 @@ end
 hook.Add("PopulateToolMenu","ba2_options",function(panel)
     -- ABOUT
     spawnmenu.AddToolMenuOption("Options","Bio-Annihilation II","ba2_config_abt","About","","",function(panel)
-        panel:Help("GaussTheWiz presents:")
+        panel:Help("GaussTheWizard presents:")
 
         local img = vgui.Create("DImage")
         img:SetImage("vgui/ba2_splash")
