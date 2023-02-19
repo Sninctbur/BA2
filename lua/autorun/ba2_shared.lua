@@ -177,7 +177,7 @@ sound.Add({
     channel = CHAN_VOICE,
     level = 80,
     pitch = 100,
-    sound = {
+    sound = IsMounted("ep1") and {
         "npc/zombine/zombine_idle1.wav",
         "npc/zombine/zombine_idle2.wav",
         "npc/zombine/zombine_idle3.wav",
@@ -191,6 +191,13 @@ sound.Add({
         "npc/zombine/zombine_alert7.wav",
         "npc/zombine/zombine_pain3.wav",
         "npc/zombine/zombine_pain4.wav",
+    }
+    or {
+        "npc/zombie_poison/pz_alert1.wav",
+        "npc/zombie_poison/pz_alert2.wav",
+        "npc/zombie_poison/pz_warn1.wav",
+        "npc/zombie_poison/pz_warn2.wav",
+        "npc/zombie_poison/pz_call1.wav",
     }
 })
 sound.Add({
@@ -217,11 +224,11 @@ sound.Add({
         "vo/soldier_pickaxetaunt03.mp3",
         "vo/soldier_pickaxetaunt04.mp3",
         "vo/soldier_pickaxetaunt05.mp3",
-        -- "vo/soldier_battlecry01.mp3",
-        -- "vo/soldier_battlecry02.mp3",
-        -- "vo/soldier_battlecry03.mp3",
-        -- "vo/soldier_battlecry04.mp3",
-        -- "vo/soldier_battlecry05.mp3",
+        "vo/soldier_battlecry01.mp3",
+        "vo/soldier_battlecry02.mp3",
+        "vo/soldier_battlecry03.mp3",
+        "vo/soldier_battlecry04.mp3",
+        "vo/soldier_battlecry05.mp3",
         "vo/taunts/soldier_taunts01.mp3",
         "vo/taunts/soldier_taunts03.mp3",
         "vo/taunts/soldier_taunts04.mp3",
@@ -274,7 +281,7 @@ sound.Add({
     channel = CHAN_VOICE,
     level = 90,
     pitch = {85,95},
-    sound = {
+    sound = IsMounted("ep1") and {
         "npc/zombine/zombine_die1.wav",
         "npc/zombine/zombine_die2.wav",
         "npc/combine_soldier/die1.wav",
@@ -282,6 +289,11 @@ sound.Add({
         "npc/combine_soldier/die3.wav",
         "npc/zombine/zombine_pain1.wav",
         "npc/zombine/zombine_pain2.wav"
+    }
+    or {
+        "npc/combine_soldier/die1.wav",
+        "npc/combine_soldier/die2.wav",
+        "npc/combine_soldier/die3.wav",
     }
 })
 sound.Add({

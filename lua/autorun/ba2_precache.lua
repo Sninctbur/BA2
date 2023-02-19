@@ -25,13 +25,13 @@ for i,mdl in pairs(tbl) do
     util.PrecacheModel(mdl)
 end
 
-local tbl = {
-    "ba2_headlessbleed",
-    "ba2_fleshtear",
-    "ba2_gibsplat",
-    "ba2_infectcry"
-}
+-- local tbl = {
+--     "ba2_headlessbleed",
+--     "ba2_fleshtear",
+--     "ba2_gibsplat",
+--     "ba2_infectcry"
+-- }
 
-for i,mdl in pairs(tbl) do
-    util.PrecacheSound(mdl)
-end
+-- for i,mdl in pairs(tbl) do
+--     util.PrecacheSound(mdl) -- PrecacheSound is deliberately broken
+-- end

@@ -32,7 +32,12 @@ function ENT:VialBreak(ent)
     if self.ImmuneToBreakTime >= CurTime() then return end
 
     self:PhysicsDestroy() -- Prevents double collisions
-    self:EmitSound("weapons/jar_explode.wav")
+    if IsMounted("tf") then
+        self:EmitSound("weapons/jar_explode.wav")
+    else
+        self:EmitSound("physics/glass/glass_cup_break2.wav")
+        self:EmitSound("physics/flesh/flesh_squishy_impact_hard4.wav")
+    end
 
     if IsValid(ent) then
         if (ent:IsPlayer() or ent:IsNPC()) then
