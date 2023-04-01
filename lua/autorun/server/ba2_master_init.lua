@@ -647,7 +647,7 @@ hook.Add("PostGamemodeLoaded","BA2_NavmeshWarn",function()
             net.Send(Entity(1))
         end
     end) 
-    if os.date("%m%d") == "0401" then
+    if IsMounted("tf") and os.date("%m%d") == "0401" then
         BA2_MaggotMode = true
     end
 end)
