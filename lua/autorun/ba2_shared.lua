@@ -177,7 +177,7 @@ sound.Add({
     channel = CHAN_VOICE,
     level = 80,
     pitch = 100,
-    sound = IsMounted("ep1") and {
+    sound = IsMounted("episodic") and {
         "npc/zombine/zombine_idle1.wav",
         "npc/zombine/zombine_idle2.wav",
         "npc/zombine/zombine_idle3.wav",
@@ -281,7 +281,7 @@ sound.Add({
     channel = CHAN_VOICE,
     level = 90,
     pitch = {85,95},
-    sound = IsMounted("ep1") and {
+    sound = IsMounted("episodic") and {
         "npc/zombine/zombine_die1.wav",
         "npc/zombine/zombine_die2.wav",
         "npc/combine_soldier/die1.wav",
