@@ -156,12 +156,12 @@ function BA2_InfectionTick(ent)
             if ent.BA2Infection == nil then return end
 
             if IsValid(ent) and GetConVar("ba2_inf_contagionmult"):GetFloat() > 0 and !BA2_GetActiveMask(ent) then
-                if BA2_JMod and ent:IsPlayer() and JMod_GetArmorBiologicalResistance(ent,DMG_NERVEGAS) > 0 then
+                if BA2_JMod and ent:IsPlayer() and JMod.GetArmorBiologicalResistance(ent,DMG_NERVEGAS) > 0 then
                     return
                 end
                 
                 for i,e in pairs(ents.FindInSphere(ent:GetPos(),100 * GetConVar("ba2_inf_contagionmult"):GetFloat())) do
-                    if BA2_JMod and e:IsPlayer() and JMod_GetArmorBiologicalResistance(e,DMG_NERVEGAS) > 0 then
+                    if BA2_JMod and e:IsPlayer() and JMod.GetArmorBiologicalResistance(e,DMG_NERVEGAS) > 0 then
                         continue
                     end
 
