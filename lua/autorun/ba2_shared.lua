@@ -141,7 +141,7 @@ DMG_BIOVIRUS = 83598
 
 BA2_MODVERSION = "Hotfix 3A"
 
-BA2_JMod = (JMod_GetArmorBiologicalResistance ~= nil)
+BA2_JMod = (istable(JMod) and JMod.GetArmorBiologicalResistance)
 
 -- Sounds
 sound.Add({
