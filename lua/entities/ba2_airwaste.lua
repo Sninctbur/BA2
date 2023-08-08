@@ -75,7 +75,7 @@ function ENT:Think()
         for i,ent in pairs(entTable) do
             local JModResistance = 0
             if BA2_JMod and ent:IsPlayer() then
-                JModResistance = JMod_GetArmorBiologicalResistance(ent,DMG_NERVEGAS)
+                JModResistance = JMod.GetArmorBiologicalResistance(ent,DMG_NERVEGAS)
             end
 
             if !BA2_GetActiveMask(ent) then
