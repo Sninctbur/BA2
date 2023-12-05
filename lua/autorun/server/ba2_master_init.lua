@@ -239,7 +239,10 @@ function BA2_InfectionDeath(ent,inflict,killer,dmg)
             body:Activate()
             body:SetVelocity(ent:GetVelocity())
             if dmg ~= nil then
-                body:GetPhysicsObject():ApplyForceCenter(dmg:GetDamageForce())
+                local physObj = body:GetPhysicsObject()
+                if IsValid(physObj) then
+                    physObj:ApplyForceCenter(dmg:GetDamageForce())
+                end
             end
 
             timer.Simple(riseTime,function()

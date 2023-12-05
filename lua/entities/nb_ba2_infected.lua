@@ -51,7 +51,7 @@ function ENT:Initialize()
 		-- --self:SetSolid(SOLID_VPHYSICS)
 		-- self:EnableCustomCollisions(true)
 		-- self:SetCustomCollisionCheck(true)
-		self.loco:SetStepHeight(60)
+		self.loco:SetStepHeight(36)
 		self.loco:SetJumpHeight(80)
 		
 		for i,npc in pairs(ents.FindByClass("npc_*")) do
