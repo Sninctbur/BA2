@@ -139,7 +139,7 @@ BA2_ZombieTypes = {
 
 DMG_BIOVIRUS = 83598
 
-BA2_MODVERSION = "Hotfix 3A"
+BA2_MODVERSION = "Hotfix 3B"
 
 BA2_JMod = (istable(JMod) and JMod.GetArmorBiologicalResistance)
 
