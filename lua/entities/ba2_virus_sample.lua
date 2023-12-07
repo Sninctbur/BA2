@@ -55,7 +55,7 @@ function ENT:VialBreak(ent)
     util.Effect("BloodImpact",eff)
 
     for i,e in pairs(ents.FindInSphere(self:GetPos(),260)) do
-        if JMod.GetArmorBiologicalResistance ~= nil and e:IsPlayer() and JMod.GetArmorBiologicalResistance(e,DMG_NERVEGAS) == 1 then
+        if BA2_JMod and JMod.GetArmorBiologicalResistance ~= nil and e:IsPlayer() and JMod.GetArmorBiologicalResistance(e,DMG_NERVEGAS) == 1 then
 			JMod.DepleteArmorChemicalCharge(e,.0125)
 			continue
 		end
