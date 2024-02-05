@@ -1134,16 +1134,17 @@ function ENT:OnInjured(dmginfo)
 end
 
 function ENT:OnKilled(dmginfo)
+	if not IsValid(self.InfBody) then self:Remove() return end
+
+	hook.Run("BA2_OnZombieKilled", self, dmginfo)
 	if engine.ActiveGamemode() == "horde" then
-		gamemode.Call("OnNPCKilled",self,dmginfo:GetAttacker(),dmginfo:GetInflictor()) -- Hardcode to fix horde
+		gamemode.Call("OnNPCKilled",self,dmginfo:GetAttacker(),dmginfo:GetInflictor()) -- Hardcode to fix horde (I trust the players to debug this responsibly (big mistake))
 	end
 
 	net.Start("BA2ZomDeathNotice")
 	net.WriteEntity(dmginfo:GetAttacker())
 	net.WriteEntity(dmginfo:GetInflictor())
 	net.Broadcast()
-
-	if not IsValid(self.InfBody) then self:Remove() return end
 	
 	self:ZombieVox("hurt")
 
