@@ -9,6 +9,43 @@ if SERVER then
 	include("autorun/server/ba2_master_init.lua")
 end
 
+-- Cache all relevant convars to avoid unnecessary re-querying while zombies are active
+local convar_cache = {}
+local convars = {
+	"ba2_zom_range",
+	"ba2_zom_range",
+	"ba2_inf_inherithealth",
+	"ba2_zom_health",
+	"ba2_cos_tint",
+	"ai_ignoreplayers",
+	"ai_disabled",
+	"ba2_zom_breakobjects",
+	"ba2_zom_attackmode",
+	"ba2_zom_retargeting",
+	"ba2_zom_range",
+	"ba2_zom_pursuitspeed",
+	"ba2_zom_corpseeat",
+	"ba2_zom_dmgmult",
+	"ba2_zom_infectionmult",
+	"ba2_zom_propdmgmult",
+	"ba2_zom_doorrespawn",
+	"ba2_zom_breakphys",
+	"ba2_zom_armordamagemult",
+	"ba2_zom_armdamage",
+	"ba2_zom_limbdamagemult",
+	"ba2_zom_legdamage",
+	"ba2_misc_realistic",
+	"ba2_zom_damagestun",
+	"ba2_zom_medicdropchance",
+	"ba2_zom_nonheadshotmult",
+	"ba2_misc_corpselife",
+	"ba2_misc_addscore",
+	"ba2_misc_headshoteff"
+}
+
+for i,v in pairs(convars) do
+	convar_cache[v] = GetConVar(v)
+end
 
 -- Initialization
 function ENT:Initialize()
@@ -31,13 +68,13 @@ function ENT:Initialize()
 		-- min: -13,-13,-5.94
 		-- max: 13,13,72
 
-		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt() or 10000
+		self.SearchRadius = convar_cache["ba2_zom_range"]:GetInt() or 10000
 		self.HullType = HULL_HUMAN
 		local hp = 100
-		if GetConVar("ba2_inf_inherithealth"):GetBool() and self.BA2_HPInherit then
+		if convar_cache["ba2_inf_inherithealth"]:GetBool() and self.BA2_HPInherit then
 			hp = self.BA2_HPInherit
 		else
-			hp = GetConVar("ba2_zom_health"):GetInt()
+			hp = convar_cache["ba2_zom_health"]:GetInt()
 		end
 		self:SetMaxHealth(hp)
 		self:SetHealth(hp)
@@ -106,7 +143,7 @@ function ENT:Initialize()
 					self.InfBody = tbl2[math.random(#tbl2)]
 				end
 
-				if !GetConVar("ba2_cos_tint"):GetBool() then
+				if !convar_cache["ba2_cos_tint"]:GetBool() then
 					self.ColorOverride = Color(255,255,255)
 				end
 			end
@@ -190,7 +227,7 @@ end
 function ENT:IsValidEnemy(e)
 	local ent = e or self:GetEnemy()
 	return IsValid(ent) and ent:GetNoDraw() == false and ((ent:IsNPC()) 
-		or (not GetConVar("ai_ignoreplayers"):GetBool() and ent:IsPlayer() and ent:Alive()) 
+		or (not convar_cache["ai_ignoreplayers"]:GetBool() and ent:IsPlayer() and ent:Alive()) 
 		or (ent:IsNextBot() and !string.StartWith(ent:GetClass(),"nb_ba2_infected")))
 end
 function ENT:GetAllEnemies()
@@ -230,7 +267,7 @@ end
 
 -- AI
 function ENT:ZombieNav(path)
-	return path:Compute(self,self.NavTarget,function( area, fromArea, ladder, elevator, length ) -- Mod of the default function because writing a pathfinding algorithm is the most horrific thing a programmer can do
+	return path:Compute(self,self.NavTarget,function( area, fromArea, ladder, elevator, length ) -- Mod of the default function because writing a pathfinding algorithm is the most horrific thing a programmer can do (for an amateur lol)
 		if ( !IsValid( fromArea ) ) then
 			-- first area in path, no cost
 			return 0
@@ -311,7 +348,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 	}
 
 	while true do
-		if GetConVar("ai_disabled"):GetBool() then
+		if convar_cache["ai_disabled"]:GetBool() then
 			self:SwitchActivity( ACT_IDLE )
 			-- n o t h i n g
 		elseif self:WaterLevel() == 3 or (self.BA2_Crippled and self:WaterLevel() >= 1) then
@@ -392,17 +429,17 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 			if self.NavTarget ~= nil then -- ChaseEnemy code robbed shamelessly from the wiki, because fuck reinventing the wheel
 				--self.loco:FaceTowards(self.NavTarget)
-				local distToTarget = self:GetPos():Distance(self.NavTarget)
+				local distToTarget = self:GetPos():DistToSqr(self.NavTarget)
 
 				--self.NavTarget = LerpVector(math.Clamp(500 / distToTarget,0,1),self:GetPos(),self.NavTarget) -- Set our goal position closer to ourselves if it gets really far away
 
-				if path:GetAge() > math.Clamp(distToTarget / 1000,3,10) then
+				if path:GetAge() > math.Clamp(distToTarget / 1000000,3,10) then
 					pathComplete = self:ZombieNav(path)	-- Compute the path towards the enemies position
 				end
 				--print(pathComplete)
 	
 				if pathComplete then
-					if path:GetAge() > 0.5 and (distToTarget < 1000) then -- Remake the path sooner if it's successful to keep up the chase
+					if path:GetAge() > 0.5 and (distToTarget < 1000000) then -- Remake the path sooner if it's successful to keep up the chase
 						pathComplete = self:ZombieNav(path) -- Compute the path towards the enemy's position again
 					end							-- This function moves the bot along the path
 				elseif self:IsValidEnemy() then
@@ -436,7 +473,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					local tr = nil
 					local tr2 = nil
 
-					if GetConVar("ba2_zom_breakobjects"):GetBool() and !(self.BA2_LArmDown and self.BA2_RArmDown) then
+					if convar_cache["ba2_zom_breakobjects"]:GetBool() and !(self.BA2_LArmDown and self.BA2_RArmDown) then
 						tr = util.TraceHull({
 							start = self:EyePos(),
 							endpos = self:EyePos() + self:GetForward() * 25,
@@ -452,12 +489,12 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 						debugoverlay.Line(tr.StartPos,tr.HitPos,.1)
 					end
 
-					if GetConVar("ba2_zom_breakobjects"):GetBool() and tr ~= nil and tr.Hit and tr2.Hit and !traceEnts[tr2.Hit] and !self:VisibleVec(self:GetEnemy():GetPos()) and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
+					if convar_cache["ba2_zom_breakobjects"]:GetBool() and tr ~= nil and tr.Hit and tr2.Hit and !traceEnts[tr2.Hit] and !self:VisibleVec(self:GetEnemy():GetPos()) and (tr.Entity:IsVehicle() or traceEnts[tr.Entity:GetClass()]) then
 						path:Invalidate()
 						self:ZombieSmash(tr.Entity)
 					elseif self:GetEnemy():GetPos():Distance(self:GetPos()) <= 60 and self:VisibleVec(self:GetEnemy():GetPos()) and !(self:GetEnemy():IsPlayer() and self:GetEnemy():InVehicle()) then
 						path:Invalidate()
-						if GetConVar("ba2_zom_attackmode"):GetBool() then
+						if convar_cache["ba2_zom_attackmode"]:GetBool() then
 							self:ZombieAttackAlt(self:GetEnemy())
 						else
 							self:ZombieAttack()
@@ -465,19 +502,19 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					end
 				end
 
-				if GetConVar("ba2_zom_retargeting"):GetBool() and CurTime() >= self.BA2_TimeToNextScan then
+				if convar_cache["ba2_zom_retargeting"]:GetBool() and CurTime() >= self.BA2_TimeToNextScan then
 					self:SearchForEnemy()
 				end
 			end
 		end
 
 		-- Refresh convars
-		self.SearchRadius = GetConVar("ba2_zom_range"):GetInt()
+		self.SearchRadius = convar_cache["ba2_zom_range"]:GetInt()
 		coroutine.yield()
 	end
 end
 function ENT:PursuitSpeed()
-	local PursuitConfig = self.PursuitSpeedOverride or GetConVar("ba2_zom_pursuitspeed"):GetInt()
+	local PursuitConfig = self.PursuitSpeedOverride or convar_cache["ba2_zom_pursuitspeed"]:GetInt()
 	if self.BA2_Crippled then
 		self:SwitchActivity(ACT_WALK)
 		self.loco:SetDesiredSpeed(45 * self.BA2_SpeedMult)
@@ -501,7 +538,7 @@ function ENT:SearchForEnemy()
 	-- Don't bother looking for enemies if there are no enemies in the first place
 	self.BA2_TimeToNextScan = CurTime() + math.random(10,20) / 10
 	if #ents.FindByClass("npc_*") == 0 then
-		if GetConVar("ai_ignoreplayers"):GetBool() then return
+		if convar_cache["ai_ignoreplayers"]:GetBool() then return
 		else
 			local foundPly = false
 			for i,p in pairs(player.GetAll()) do
@@ -530,7 +567,7 @@ function ENT:SearchForEnemy()
 	return minEnt
 end
 function ENT:SearchForCorpse()
-	if !GetConVar("ba2_zom_corpseeat"):GetBool() then return end
+	if !convar_cache["ba2_zom_corpseeat"]:GetBool() then return end
 	if #ents.FindByClass("prop_ragdoll") == 0 then return end -- Don't iterate over anything if there are no ragdolls
 
 	local minEnt = nil
@@ -580,7 +617,7 @@ function ENT:HandleStuck()
 
 	self.NavTarget = self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200 
 	--self:MoveToPos(self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 200,{maxage = 3}) -- Unoptimized, apparently
-	for i = 1,125 do
+	for i = 1,25 do
 		self:PursuitSpeed()
 		self.loco:FaceTowards(self.NavTarget)
 		self.loco:Approach(self.NavTarget,1)
@@ -611,8 +648,8 @@ function ENT:ZombieAttack()
 	end
 
 	local enemy = self:GetEnemy()
-	local dmgMult = GetConVar("ba2_zom_dmgmult"):GetFloat()
-	local attackMode = GetConVar("ba2_zom_attackmode"):GetInt()
+	local dmgMult = convar_cache["ba2_zom_dmgmult"]:GetFloat()
+	local attackMode = convar_cache["ba2_zom_attackmode"]:GetInt()
 
 	if !(self.BA2_LArmDown and self.BA2_RArmDown) then
 		self:EmitSound("physics/flesh/flesh_impact_hard"..math.random(1,6)..".wav")
@@ -630,7 +667,7 @@ function ENT:ZombieAttack()
 		if enemy:GetPos():Distance(self:GetPos()) > breakDist then break end
 		self.loco:FaceTowards(enemy:GetPos())
 
-		BA2_AddInfection(enemy,math.random(1,7) * GetConVar("ba2_zom_infectionmult"):GetFloat())
+		BA2_AddInfection(enemy,math.random(1,7) * convar_cache["ba2_zom_infectionmult"]:GetFloat())
 
 		local dmg = DamageInfo()
 		dmg:SetDamage(math.random(7,9) * dmgMult)
@@ -681,10 +718,10 @@ function ENT:ZombieAttackAlt(ent)
 
 			debugoverlay.Box(self:EyePos() + self:GetForward() * 25,Vector(16,16,16),Vector(-16,-16,-16),2)
 			if tr.Entity == ent then
-				BA2_AddInfection(ent,math.random(1,7) * GetConVar("ba2_zom_infectionmult"):GetFloat())
+				BA2_AddInfection(ent,math.random(1,7) * convar_cache["ba2_zom_infectionmult"]:GetFloat())
 
 				local dmg = DamageInfo()
-				dmg:SetDamage(math.random(10,15) * GetConVar("ba2_zom_dmgmult"):GetFloat())
+				dmg:SetDamage(math.random(10,15) * convar_cache["ba2_zom_dmgmult"]:GetFloat())
 				dmg:SetDamageType(DMG_SLASH)
 				dmg:SetDamageCustom(DMG_BIOVIRUS)
 				dmg:SetAttacker(self)
@@ -764,7 +801,7 @@ function ENT:ZombieSmash(ent)
 			})
 
 			if tr.Hit or string.StartWith(class,"func_breakable") then
-				local propDmg = math.random(10,20) * GetConVar("ba2_zom_propdmgmult"):GetFloat()
+				local propDmg = math.random(10,20) * convar_cache["ba2_zom_propdmgmult"]:GetFloat()
 				if self.BA2_LArmDown or self.BA2_RArmDown then
 					propDmg = propDmg * 0.5
 				end
@@ -801,7 +838,7 @@ function ENT:ZombieSmash(ent)
 								ent:SetSolid(SOLID_NONE)
 							end
 
-							local doorRespawn = GetConVar("ba2_zom_doorrespawn"):GetFloat()
+							local doorRespawn = convar_cache["ba2_zom_doorrespawn"]:GetFloat()
 							if doorRespawn > 0 then
 								timer.Simple(doorRespawn,function()
 									if IsValid(ent) then
@@ -837,14 +874,14 @@ function ENT:ZombieSmash(ent)
 					ent:TakeDamageInfo(dmg)
 				end
 				
-				if GetConVar("ba2_zom_breakphys"):GetBool() and #constraint.GetTable(ent) > 0 then
+				if convar_cache["ba2_zom_breakphys"]:GetBool() and #constraint.GetTable(ent) > 0 then
 					constraint.RemoveAll(ent)
 					ent:EmitSound("physics/metal/sawblade_stick"..math.random(1,3)..".wav")
 				end
 				local phys = ent:GetPhysicsObject()
 				if IsValid(phys) then
 					phys:ApplyForceCenter(self:GetForward() * 5000)
-					if GetConVar("ba2_zom_breakphys"):GetBool() then
+					if convar_cache["ba2_zom_breakphys"]:GetBool() then
 						phys:EnableMotion(true)
 					end
 				end
@@ -1026,7 +1063,7 @@ end
 
 function ENT:OnTraceAttack(dmginfo,dir,trace)
 	if self.BA2_ArmoredZom and (trace.HitGroup == HITGROUP_HEAD or trace.HitGroup == HITGROUP_CHEST or trace.HitGroup == HITGROUP_STOMACH) then
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_armordamagemult"):GetFloat())
+		dmginfo:SetDamage(dmginfo:GetDamage() * convar_cache["ba2_zom_armordamagemult"]:GetFloat())
 
 		local eff = EffectData()
 		eff:SetOrigin(trace.HitPos)
@@ -1047,7 +1084,7 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 			self:EmitSound("player/crit_hit"..math.random(2,6)..".wav",95)
 		end
 
-		if GetConVar("ba2_misc_headshoteff"):GetBool() and dmgAmount >= math.random(100,180) then
+		if convar_cache["ba2_misc_headshoteff"]:GetBool() and dmgAmount >= math.random(100,180) then
 			self.BA2_HeadshotEffect = true
 		end
 	elseif dmgAmount >= math.random(30,80) then
@@ -1060,36 +1097,36 @@ function ENT:OnTraceAttack(dmginfo,dir,trace)
 
 	if trace.HitGroup == HITGROUP_LEFTARM and self.BA2_LArmDown == nil then
 		self.BA2_LArmDamage = self.BA2_LArmDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * .75 then
+		if convar_cache["ba2_zom_armdamage"]:GetBool() and self.BA2_LArmDamage >= self:GetMaxHealth() * .75 then
 			self:BreakLArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
+		dmginfo:SetDamage(dmginfo:GetDamage() * convar_cache["ba2_zom_limbdamagemult"]:GetFloat() / 3)
 	elseif trace.HitGroup == HITGROUP_RIGHTARM and self.BA2_RArmDown == nil then
 		self.BA2_RArmDamage = self.BA2_RArmDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_armdamage"):GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * .75 then
+		if convar_cache["ba2_zom_armdamage"]:GetBool() and self.BA2_RArmDamage >= self:GetMaxHealth() * .75 then
 			self:BreakRArm(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
+		dmginfo:SetDamage(dmginfo:GetDamage() * convar_cache["ba2_zom_limbdamagemult"]:GetFloat() / 3)
 	end
 
 	if trace.HitGroup == HITGROUP_LEFTLEG and self.BA2_LLegDown == nil then
 		self.BA2_LLegDamage = self.BA2_LLegDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() then
+		if convar_cache["ba2_zom_legdamage"]:GetBool() and self.BA2_LLegDamage >= self:GetMaxHealth() then
 			self:BreakLLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
+		dmginfo:SetDamage(dmginfo:GetDamage() * convar_cache["ba2_zom_limbdamagemult"]:GetFloat() / 3)
 	elseif trace.HitGroup == HITGROUP_RIGHTLEG and self.BA2_RLegDown == nil then
 		self.BA2_RLegDamage = self.BA2_RLegDamage + dmginfo:GetDamage()
-		if GetConVar("ba2_zom_legdamage"):GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() then
+		if convar_cache["ba2_zom_legdamage"]:GetBool() and self.BA2_RLegDamage >= self:GetMaxHealth() then
 			self:BreakRLeg(dmginfo)
 		end
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_limbdamagemult"):GetFloat() / 3)
+		dmginfo:SetDamage(dmginfo:GetDamage() * convar_cache["ba2_zom_limbdamagemult"]:GetFloat() / 3)
 	end
 
 	if trace.HitGroup ~= HITGROUP_HEAD then
-		dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_nonheadshotmult"):GetFloat())
+		dmginfo:SetDamage(dmginfo:GetDamage() * convar_cache["ba2_zom_nonheadshotmult"]:GetFloat())
 	end
-	if GetConVar("ba2_misc_realistic"):GetBool() and trace.HitGroup == HITGROUP_CHEST and dmgAmount >= self:Health() and dmginfo:GetAmmoType() == 3 then
+	if convar_cache["ba2_misc_realistic"]:GetBool() and trace.HitGroup == HITGROUP_CHEST and dmgAmount >= self:Health() and dmginfo:GetAmmoType() == 3 then
 		self.BA2_PoliticalJoke = true
 	end
 
@@ -1101,7 +1138,7 @@ end
 function ENT:OnInjured(dmginfo)
 	if dmginfo:IsExplosionDamage() and math.random(1,100) <= dmginfo:GetDamage() then
 		if self.BA2_ArmoredZom then
-			dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ba2_zom_armordamagemult"):GetFloat())
+			dmginfo:SetDamage(dmginfo:GetDamage() * convar_cache["ba2_zom_armordamagemult"]:GetFloat())
 		end
 		if math.random(self:GetMaxHealth()) <= dmginfo:GetDamage() then
 			local randNum
@@ -1128,7 +1165,7 @@ function ENT:OnInjured(dmginfo)
 	end
 
 	if (self:GetAttacking() and bit.bor(dmginfo:GetDamageType(),DMG_SLASH + DMG_CRUSH + DMG_CLUB + DMG_BLAST))
-	or (GetConVar("ba2_zom_damagestun"):GetBool() and dmginfo:GetDamage() > self:Health() / 2) then
+	or (convar_cache["ba2_zom_damagestun"]:GetBool() and dmginfo:GetDamage() > self:Health() / 2) then
 		self:ZombieStun()
 	end
 end
@@ -1148,7 +1185,7 @@ function ENT:OnKilled(dmginfo)
 	
 	self:ZombieVox("hurt")
 
-	if string.find(self.InfBody:GetModel(),"group03m") and math.random(1,100) <= GetConVar("ba2_zom_medicdropchance"):GetInt() then
+	if string.find(self.InfBody:GetModel(),"group03m") and math.random(1,100) <= convar_cache["ba2_zom_medicdropchance"]:GetInt() then
 		local vial = ents.Create("item_healthvial")
 		vial:SetPos(self:GetPos() + Vector(0,0,40))
 		vial:SetVelocity(VectorRand() * 2)
@@ -1329,7 +1366,7 @@ function ENT:OnKilled(dmginfo)
 	if IsValid(phys) then
 		phys:ApplyForceCenter(dmginfo:GetDamageForce())
 	end
-	local corpseLife = GetConVar("ba2_misc_corpselife"):GetFloat()
+	local corpseLife = convar_cache["ba2_misc_corpselife"]:GetFloat()
 	if corpseLife >= 0 then
 		body:Fire("FadeAndRemove","0.5",corpseLife)
 	end
@@ -1355,7 +1392,7 @@ function ENT:OnKilled(dmginfo)
 	-- 	end
 	-- end
 	
-	if GetConVar("ba2_misc_addscore"):GetBool() then
+	if convar_cache["ba2_misc_addscore"]:GetBool() then
 		local att = dmginfo:GetAttacker()
 		if IsValid(att) and att:IsPlayer() then
 			att:AddFrags(1)

@@ -16,14 +16,14 @@ function ENT:Initialize()
             if IsValid(self:GetCreator()) then
                 self:GetCreator():PrintMessage(HUD_PRINTCENTER,"This map doesn't have a navmesh!")
             end
-            print("BA2: There is no navmesh! Despawning horde spawner...")
+            -- print("BA2: There is no navmesh! Despawning horde spawner...")
             self:Remove()
         end
         if #ents.FindByClass(self.ClassName) > 1 then
             if IsValid(self:GetCreator()) then
                 self:GetCreator():PrintMessage(HUD_PRINTCENTER,"There can only be one Horde Spawner at once!")
             end
-            print("BA2: There can only be one Horde Spawner at once!")
+            -- print("BA2: There can only be one Horde Spawner at once!")
             self:Remove()
             return
         end
@@ -103,6 +103,8 @@ function ENT:SpawnZoms(amnt)
                         end
 
                         for i,nav in pairs(self.navs) do
+                            if nav:IsUnderwater() then continue end
+
                             for i,ent in pairs(spawnEnts) do
                                 local dist = nav:GetCenter():Distance(ent:GetPos())
                                 if dist <= maxDist and dist > minDist then
@@ -130,9 +132,9 @@ function ENT:SpawnZoms(amnt)
                         return
                     end
 
-                    while navArea:IsUnderwater() do -- Can't spawnkill our zombies
-                        navArea = self.navs[math.random(1,#self.navs)]
-                    end
+                    -- while navArea:IsUnderwater() do -- Can't spawnkill our zombies
+                    --     navArea = self.navs[math.random(1,#self.navs)]
+                    -- end
                     
                     local spawnPos = navArea:GetCenter()
 
