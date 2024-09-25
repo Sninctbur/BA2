@@ -548,6 +548,7 @@ end)
 
 
 hook.Add("PlayerDeath","BA2_PlayerDeath",function(p,inf,ent,dmg)
+    if !IsValid(inf) || !IsValid(ent) then return end
     if inf ~= nil and GetConVar("ba2_inf_plyraise"):GetBool() and (GetConVar("ba2_inf_romeromode"):GetBool() 
      or (IsValid(p) and p.BA2Infection > 0) 
      or inf:GetClass() == BA2_InfectionManager()) then
