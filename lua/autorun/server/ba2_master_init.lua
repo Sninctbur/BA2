@@ -462,25 +462,26 @@ end)
 hook.Add("OnEntityCreated","ba2_npcZomRelation",function(npc)
     if npc:IsNPC() then
         for i,z in pairs(ents.FindByClass("nb_ba2_infected*")) do
-            if npc.IsVJBaseSNPC then
-                timer.Simple(0,function()
-                    if IsValid(npc) and IsValid(z) and npc.VJ_AddCertainEntityAsEnemy ~= nil then
-                        table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
-                        table.insert(npc.CurrentPossibleEnemies,z)
-                    end
-                end)
-            end
+            -- if npc.IsVJBaseSNPC then
+            --     timer.Simple(0,function()
+            --         if IsValid(npc) and IsValid(z) and npc.VJ_AddCertainEntityAsEnemy ~= nil then
+            --             -- table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
+            --             -- table.insert(npc.CurrentPossibleEnemies,z)
+            --         end
+            --     end)
+            -- end
             npc:AddEntityRelationship(z,D_HT,1)
         end
-    elseif string.StartWith(npc:GetClass(),"nb_ba2_infected") then -- Vrej, why must I hardcode this ;-;
-        for i,n in pairs(ents.FindByClass("npc_*")) do
-            if n.IsVJBaseSNPC then
-                table.insert(n.VJ_AddCertainEntityAsEnemy,npc)
-                table.insert(n.CurrentPossibleEnemies,npc)
-                n:AddEntityRelationship(npc,D_HT,1)
-            end
-        end
     end
+    -- elseif string.StartWith(npc:GetClass(),"nb_ba2_infected") then -- As of VJ Base 3.0.0, I no longer have to hardcode this :D
+    --     for i,n in pairs(ents.FindByClass("npc_*")) do
+    --         if n.IsVJBaseSNPC then
+    --             -- table.insert(n.VJ_AddCertainEntityAsEnemy,npc)
+    --             -- table.insert(n.CurrentPossibleEnemies,npc)
+    --             n:AddEntityRelationship(npc,D_HT,1)
+    --         end
+    --     end
+    -- end
 end)
 
 

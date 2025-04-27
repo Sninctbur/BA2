@@ -93,10 +93,10 @@ function ENT:Initialize()
 		
 		for i,npc in pairs(ents.FindByClass("npc_*")) do
 			if IsValid(npc) and npc:IsNPC() then
-				if npc.IsVJBaseSNPC then
-					table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
-					table.insert(npc.CurrentPossibleEnemies,z)
-				end
+				-- if npc.IsVJBaseSNPC then
+				-- 	-- table.insert(npc.VJ_AddCertainEntityAsEnemy,z)
+				-- 	-- table.insert(npc.CurrentPossibleEnemies,z)
+				-- end
 				npc:AddEntityRelationship(self,D_HT,1)
 			end
 		end
@@ -453,7 +453,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 
 					if tr.Hit and !traceEnts[tr.Entity] then
 						self:SetEnemy(self:SearchForEnemy()) -- Pick a new enemy if we can't get to the current one
-						self:HandleStuck()
+						-- self:HandleStuck()
 					end
 				end
 
@@ -464,7 +464,7 @@ function ENT:RunBehaviour() -- IT'S BEHAVIOUR NOT BEHAVIOR YOU DUMBASS
 					-- if (path:GetPositionOnPath(path:GetCursorPosition() + 25) - path:GetCursorData().pos).z > 0 then
 					-- 	self.loco:JumpAcrossGap(path:GetCursorData().pos,path:GetPositionOnPath(path:GetCursorPosition() + 25))
 					-- else
-						self:HandleStuck()
+					self:HandleStuck()
 					-- end
 				end
 
