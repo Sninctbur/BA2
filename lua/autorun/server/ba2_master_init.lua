@@ -5,118 +5,6 @@ util.AddNetworkString("BA2NoNavmeshWarn")
 util.AddNetworkString("BA2ReloadCustoms")
 util.AddNetworkString("BA2ZomDeathNotice")
 
--- CreateConVar("ba2_cos_defaultcolor_r",133,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
--- CreateConVar("ba2_cos_defaultcolor_g",165,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
--- CreateConVar("ba2_cos_defaultcolor_b",180,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
-CreateConVar("ba2_cos_tint",0,FCVAR_ARCHIVE,[[If enabled, Custom Infected will have blue-tinted models like other zombies.]])
-
-CreateConVar("ba2_hs_max",40,FCVAR_ARCHIVE,[[The maximum number of Horde Spawner-created zombies that can be alive at once.
-    More zombies means more difficulty - for both you and your machine.]],1)
-CreateConVar("ba2_hs_interval",1,FCVAR_ARCHIVE,[[The Horde Spawner will wait this long before spawning a new group of zombies.
-    The lower this is, the faster zombies will spawn.]],0.1)
-CreateConVar("ba2_hs_saferadius",500,FCVAR_ARCHIVE,[[The Horde Spawner cannot spawn zombies closer to potential targets than this distance.
-    You may need to decrease this value down on very small maps.]],0)
-CreateConVar("ba2_hs_maxradius",0,FCVAR_ARCHIVE,[[If above 0, the Horde Spawner must spawn zombies within this distance of potential targets.
-    Useful on very large maps, but may cause extra lag during spawning.]],0)
--- CreateConVar("ba2_hs_appearance",5,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
---     0: Citizens
---     1: Rebels
---     2: Cobmine
---     3: Custom
---     4: Any of the above
---     5: Any except Custom Infected]],0,5
--- )
-CreateConVar("ba2_hs_appearance_0",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Citizens.]])
-CreateConVar("ba2_hs_appearance_1",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Rebels.]])
-CreateConVar("ba2_hs_appearance_2",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Metrocops.]])
-CreateConVar("ba2_hs_appearance_3",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Custom Infected.]])
-CreateConVar("ba2_hs_combine_chance",10,FCVAR_ARCHIVE,[[The chance for Spawners to spawn armored Infected Combine.]],0,100)
-CreateConVar("ba2_hs_carmor_chance",0,FCVAR_ARCHIVE,[[The chance for Spawners to spawn Custom Armored Infected.]],0,100)
-CreateConVar("ba2_hs_cleanup",1,FCVAR_ARCHIVE,[[If enabled, Spawners will also remove all of the zombies it created when it gets deleted.]])
-concommand.Add("ba2_hs_delete",BA2_DestroyHS,nil,"Destroys the active Horde Spawner, if it exists.")
-CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually replace zombies who do not find a target within 6 seconds of spawning.]])
-
-CreateConVar("ba2_inf_contagionmult",1,FCVAR_ARCHIVE,[[Mutliply the distance the Bio-Virus can spread to others by this amount.
-    Set to 0 to disable contagion.]],0)
-CreateConVar("ba2_inf_plymult",1,FCVAR_ARCHIVE,[[Multiply infection received by players by this amount.
-    Set to 0 to prevent player infection.]],0)
-CreateConVar("ba2_inf_npcmult",1,FCVAR_ARCHIVE,[[Multiply infection received by NPCs by this amount.
-    Set to 0 to prevent NPC infection.]],0)
-CreateConVar("ba2_inf_plyraise",1,FCVAR_ARCHIVE,[[If enabled, players killed by the Bio-Virus will be raised into zombies.]])
-CreateConVar("ba2_inf_npcraise",1,FCVAR_ARCHIVE,[[If enabled, NPCs killed by the Bio-Virus will be raised into zombies.]])
-CreateConVar("ba2_inf_dmgmult",1,FCVAR_ARCHIVE,[[Multiply damage dealt by infection by this amount.]],0)
-CreateConVar("ba2_inf_killtoraise",1,FCVAR_ARCHIVE,[[If enabled, the Bio-Virus or one of its hosts must directly kill a victim to raise them into a zombie.
-    This means that you can kill an infected entity to prevent them from becoming a zombie, or commit suicide to prevent yourself from being raised.]])
-CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise new zombies if there are this many active zombies; instead, the corpse despawns.
-    More zombies means more difficulty - for both you and your machine.
-    Set to 0 to enable expert mode: unlimited capacity.]],0)
-CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
-CreateConVar("ba2_inf_inherithealth",1,FCVAR_ARCHIVE,[[If enabled, risen players and NPCs keep the max health they had in life.]])
-concommand.Add("ba2_inf_deleteclouds",BA2_DestroyClouds,nil,"Destroys all Contaminant Clouds on the map, as well as the Air Waste if it exists.")
-
-CreateConVar("ba2_zom_pursuitspeed",1,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
-    0: Pacing speed ("*yawn* Let me get a drink...")
-    1: Running ("Give me some space, will you?")
-    2: Full sprint ("OH GOD RUN")]],0,2
-)
-CreateConVar("ba2_zom_health",100,FCVAR_ARCHIVE,[[Zombies have this much health. Minimum 1. Only affects new zombies.]],1)
-CreateConVar("ba2_zom_dmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack by this amount.]],0)
-CreateConVar("ba2_zom_propdmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack to props and doors by this amount.
-Does not stack with ba2_zom_dmgmult.]],0)
-CreateConVar("ba2_zom_infectionmult",1,FCVAR_ARCHIVE,[[Multiply zombie infection per attack by this amount.]],0)
-CreateConVar("ba2_zom_range",10000,FCVAR_ARCHIVE,[[Multiply zombie targeting range by this amount.
-    High values may result in more lag when there are no valid targets.
-    Set to 0 to turn them into the most miserable beings in existence.]],0)
-CreateConVar("ba2_zom_nonheadshotmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage received on non-headshots by this amount.]],0,1)
-CreateConVar("ba2_zom_limbdamagemult",.5,FCVAR_ARCHIVE,[[Multiply zombie damage received on limb shots by this amount.]],0,1)
-CreateConVar("ba2_zom_armordamagemult",.75,FCVAR_ARCHIVE,[[Multiply armored zombie damage received to the head and torso by this amound.]],0,1)
-CreateConVar("ba2_zom_damagestun",1,FCVAR_ARCHIVE,[[If enabled, zombies will stagger if they take more than half their current health in damage.]])
-CreateConVar("ba2_zom_emergetime",8,FCVAR_ARCHIVE,[[After getting killed by an infectious source, entities will take this long to rise into a zombie.]])
-CreateConVar("ba2_zom_armdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have their arms broken.
-    Each lost arm halves damage output. If both arms are broken, the zombie cannot grab targets or break down barricades.]])
-CreateConVar("ba2_zom_legdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have their legs broken.
-    Legs are harder to break than arms, but breaking one forces them to crawl, making them slower and easier to headshot.]])
-CreateConVar("ba2_zom_explimbdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies have a chance to lose a random limb when they take explosive damage. (NYI)]])
-CreateConVar("ba2_zom_medicdropchance",20,FCVAR_ARCHIVE,[[The percent chance for an Infected Rebel with a Medic model to drop a Health Vial on death.
-    Set to 0 to disable this feature.]],0,100)
-CreateConVar("ba2_zom_breakobjects",1,FCVAR_ARCHIVE,[[If enabled, zombies can swat at and damage props and doors in their way.]])
-CreateConVar("ba2_zom_breakphys",1,FCVAR_ARCHIVE,[[If enabled, zombies can unfreeze and unconstrain props with their swatting.]])
-CreateConVar("ba2_zom_breakdoors",1,FCVAR_ARCHIVE,[[If enabled, zombies can break down standard doors.]])
-CreateConVar("ba2_zom_doorrespawn",30,FCVAR_ARCHIVE,[[The time in seconds it takes for a door to respawn after getting broken down.
-    If this value is zero or less, then the door will not respawn until the map is cleaned up.]],0)
-CreateConVar("ba2_zom_attackmode",0,FCVAR_ARCHIVE,[[Determines how zombies will attack their targets.
-    0: Grab
-    1: Claw]])
-CreateConVar("ba2_zom_retargeting",1,FCVAR_ARCHIVE,[[If enabled, zombies will periodically switch targets if another target is closer to them for enough time.
-This may cause stuttering, so it's recommended to disable this if you have performance issues with lots of zombies.]])
-CreateConVar("ba2_zom_corpseeat",1,FCVAR_ARCHIVE,[[If enabled, zombies will seek out and eat corpses while there are no targets within their range.]])
-
-
-CreateConVar("ba2_misc_corpselife",10,FCVAR_ARCHIVE,[[The amount of time before a zombie's corpse is cleaned up.
-    Set to -1 for infinite lifetime.]],-1
-)
-CreateConVar("ba2_misc_navmeshwarn",1,FCVAR_ARCHIVE,[[If enabled, Zambo the Helper Zombie will notify you if the map has no navmesh when you load in.]])
-CreateConVar("ba2_misc_maxfilters",4,FCVAR_ARCHIVE,[[The maximum number of gas mask filters each player can carry.
-    Set to -1 to disable this limit.]],-1)
-CreateConVar("ba2_misc_startwithmask",0,FCVAR_ARCHIVE,[[If enabled, all players will spawn with a gas mask on their person.]])
-CreateConVar("ba2_misc_deathdropmask",1,FCVAR_ARCHIVE,[[If enabled, players will drop their gas mask on death.]])
-CreateConVar("ba2_misc_deathdropfilter",1,FCVAR_ARCHIVE,[[If enabled, players will drop all of their gas mask filters on death.]])
-CreateConVar("ba2_misc_headshoteff",1,FCVAR_ARCHIVE,[[If enabled, zombies' heads have a chance to comically explode when they are killed by a headshot.]])
-CreateConVar("ba2_misc_addscore",1,FCVAR_ARCHIVE,[[If enabled, killing a zombie will award a frag to the player who killed them.]])
-CreateConVar("ba2_misc_gibdecals",1,FCVAR_ARCHIVE,[[If enabled, zombie gibs will leave lovely bloodstains on any surface they fall onto.]])
--- CreateConVar("ba2_misc_isnpc",0,FCVAR_ARCHIVE,[[If enabled, other addons will consider zombies an NPC for the purpose of IsNPC() checks.
---     Enabling this may correct interactions with some addons (for example, JMod), but can cause Lua errors in others. Enable at your own risk.]])
-
-concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
---CreateConVar("ba2_misc_kidsmode",0,FCVAR_ARCHIVE,[[If enabled, this mod will become less appalling to the ESRB.]])
-CreateConVar("ba2_misc_realistic",0,nil,"If enabed, a 9mm bullet will blow the lung out of the body.")
-
-concommand.Add("ba2_gasmask",BA2_ToggleGasmask,nil)
-concommand.Add("ba2_dgasmask",BA2_DropGasmask,nil)
-concommand.Add("ba2_dfilter",BA2_DropFilter,nil)
-concommand.Add("ba2_ufilter",BA2_UFilter,nil)
-concommand.Add("ba2_cfilter",BA2_CheckFilter,nil)
-
 
 -- Net messages
 net.Receive("BA2ReloadCustoms",function(l,p)
@@ -656,4 +544,119 @@ hook.Add("PostGamemodeLoaded","BA2_NavmeshWarn",function()
         BA2_MaggotMode = true
     end
 end)
+
+
+-- CreateConVar("ba2_cos_defaultcolor_r",133,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
+-- CreateConVar("ba2_cos_defaultcolor_g",165,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
+-- CreateConVar("ba2_cos_defaultcolor_b",180,FCVAR_ARCHIVE,[[Just save yourself the trouble and set this in the options menu.]])
+CreateConVar("ba2_cos_tint",0,FCVAR_ARCHIVE,[[If enabled, Custom Infected will have blue-tinted models like other zombies.]])
+
+CreateConVar("ba2_hs_max",40,FCVAR_ARCHIVE,[[The maximum number of Horde Spawner-created zombies that can be alive at once.
+    More zombies means more difficulty - for both you and your machine.]],1)
+CreateConVar("ba2_hs_interval",1,FCVAR_ARCHIVE,[[The Horde Spawner will wait this long before spawning a new group of zombies.
+    The lower this is, the faster zombies will spawn.]],0.1)
+CreateConVar("ba2_hs_saferadius",500,FCVAR_ARCHIVE,[[The Horde Spawner cannot spawn zombies closer to potential targets than this distance.
+    You may need to decrease this value down on very small maps.]],0)
+CreateConVar("ba2_hs_maxradius",0,FCVAR_ARCHIVE,[[If above 0, the Horde Spawner must spawn zombies within this distance of potential targets.
+    Useful on very large maps, but may cause extra lag during spawning.]],0)
+-- CreateConVar("ba2_hs_appearance",5,FCVAR_ARCHIVE,[[Configures the type of zombie the Horde Spawner creates.
+--     0: Citizens
+--     1: Rebels
+--     2: Cobmine
+--     3: Custom
+--     4: Any of the above
+--     5: Any except Custom Infected]],0,5
+-- )
+CreateConVar("ba2_hs_appearance_0",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Citizens.]])
+CreateConVar("ba2_hs_appearance_1",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Rebels.]])
+CreateConVar("ba2_hs_appearance_2",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Infected Metrocops.]])
+CreateConVar("ba2_hs_appearance_3",1,FCVAR_ARCHIVE,[[If enabled, Spawners  will create Custom Infected.]])
+CreateConVar("ba2_hs_combine_chance",10,FCVAR_ARCHIVE,[[The chance for Spawners to spawn armored Infected Combine.]],0,100)
+CreateConVar("ba2_hs_carmor_chance",0,FCVAR_ARCHIVE,[[The chance for Spawners to spawn Custom Armored Infected.]],0,100)
+CreateConVar("ba2_hs_cleanup",1,FCVAR_ARCHIVE,[[If enabled, Spawners will also remove all of the zombies it created when it gets deleted.]])
+concommand.Add("ba2_hs_delete",BA2_DestroyHS,nil,"Destroys the active Horde Spawner, if it exists.")
+CreateConVar("ba2_hs_notargetclean",1,FCVAR_ARCHIVE,[[If enabled, the Horde Spawner will delete and eventually replace zombies who do not find a target within 6 seconds of spawning.]])
+
+CreateConVar("ba2_inf_contagionmult",1,FCVAR_ARCHIVE,[[Mutliply the distance the Bio-Virus can spread to others by this amount.
+    Set to 0 to disable contagion.]],0)
+CreateConVar("ba2_inf_plymult",1,FCVAR_ARCHIVE,[[Multiply infection received by players by this amount.
+    Set to 0 to prevent player infection.]],0)
+CreateConVar("ba2_inf_npcmult",1,FCVAR_ARCHIVE,[[Multiply infection received by NPCs by this amount.
+    Set to 0 to prevent NPC infection.]],0)
+CreateConVar("ba2_inf_plyraise",1,FCVAR_ARCHIVE,[[If enabled, players killed by the Bio-Virus will be raised into zombies.]])
+CreateConVar("ba2_inf_npcraise",1,FCVAR_ARCHIVE,[[If enabled, NPCs killed by the Bio-Virus will be raised into zombies.]])
+CreateConVar("ba2_inf_dmgmult",1,FCVAR_ARCHIVE,[[Multiply damage dealt by infection by this amount.]],0)
+CreateConVar("ba2_inf_killtoraise",1,FCVAR_ARCHIVE,[[If enabled, the Bio-Virus or one of its hosts must directly kill a victim to raise them into a zombie.
+    This means that you can kill an infected entity to prevent them from becoming a zombie, or commit suicide to prevent yourself from being raised.]])
+CreateConVar("ba2_inf_maxzoms",80,FCVAR_ARCHIVE,[[The Bio-Virus will not raise new zombies if there are this many active zombies; instead, the corpse despawns.
+    More zombies means more difficulty - for both you and your machine.
+    Set to 0 to enable expert mode: unlimited capacity.]],0)
+CreateConVar("ba2_inf_romeromode",0,FCVAR_ARCHIVE,[[If enabled, all entities who die will become a zombie regardless of their infection level.]])
+CreateConVar("ba2_inf_inherithealth",1,FCVAR_ARCHIVE,[[If enabled, risen players and NPCs keep the max health they had in life.]])
+concommand.Add("ba2_inf_deleteclouds",BA2_DestroyClouds,nil,"Destroys all Contaminant Clouds on the map, as well as the Air Waste if it exists.")
+
+CreateConVar("ba2_zom_pursuitspeed",1,FCVAR_ARCHIVE,[[Configures the speed zombies run at when they find a target.
+    0: Pacing speed ("*yawn* Let me get a drink...")
+    1: Running ("Give me some space, will you?")
+    2: Full sprint ("OH GOD RUN")]],0,2
+)
+CreateConVar("ba2_zom_health",100,FCVAR_ARCHIVE,[[Zombies have this much health. Minimum 1. Only affects new zombies.]],1)
+CreateConVar("ba2_zom_dmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack by this amount.]],0)
+CreateConVar("ba2_zom_propdmgmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage per attack to props and doors by this amount.
+Does not stack with ba2_zom_dmgmult.]],0)
+CreateConVar("ba2_zom_infectionmult",1,FCVAR_ARCHIVE,[[Multiply zombie infection per attack by this amount.]],0)
+CreateConVar("ba2_zom_range",10000,FCVAR_ARCHIVE,[[Multiply zombie targeting range by this amount.
+    High values may result in more lag when there are no valid targets.
+    Set to 0 to turn them into the most miserable beings in existence.]],0)
+CreateConVar("ba2_zom_nonheadshotmult",1,FCVAR_ARCHIVE,[[Multiply zombie damage received on non-headshots by this amount.]],0,1)
+CreateConVar("ba2_zom_limbdamagemult",.5,FCVAR_ARCHIVE,[[Multiply zombie damage received on limb shots by this amount.]],0,1)
+CreateConVar("ba2_zom_armordamagemult",.75,FCVAR_ARCHIVE,[[Multiply armored zombie damage received to the head and torso by this amound.]],0,1)
+CreateConVar("ba2_zom_damagestun",1,FCVAR_ARCHIVE,[[If enabled, zombies will stagger if they take more than half their current health in damage.]])
+CreateConVar("ba2_zom_emergetime",8,FCVAR_ARCHIVE,[[After getting killed by an infectious source, entities will take this long to rise into a zombie.]])
+CreateConVar("ba2_zom_armdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have their arms broken.
+    Each lost arm halves damage output. If both arms are broken, the zombie cannot grab targets or break down barricades.]])
+CreateConVar("ba2_zom_legdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies can have their legs broken.
+    Legs are harder to break than arms, but breaking one forces them to crawl, making them slower and easier to headshot.]])
+CreateConVar("ba2_zom_explimbdamage",1,FCVAR_ARCHIVE,[[If enabled, zombies have a chance to lose a random limb when they take explosive damage. (NYI)]])
+CreateConVar("ba2_zom_medicdropchance",20,FCVAR_ARCHIVE,[[The percent chance for an Infected Rebel with a Medic model to drop a Health Vial on death.
+    Set to 0 to disable this feature.]],0,100)
+CreateConVar("ba2_zom_breakobjects",1,FCVAR_ARCHIVE,[[If enabled, zombies can swat at and damage props and doors in their way.]])
+CreateConVar("ba2_zom_breakphys",1,FCVAR_ARCHIVE,[[If enabled, zombies can unfreeze and unconstrain props with their swatting.]])
+CreateConVar("ba2_zom_breakdoors",1,FCVAR_ARCHIVE,[[If enabled, zombies can break down standard doors.]])
+CreateConVar("ba2_zom_doorrespawn",30,FCVAR_ARCHIVE,[[The time in seconds it takes for a door to respawn after getting broken down.
+    If this value is zero or less, then the door will not respawn until the map is cleaned up.]],0)
+CreateConVar("ba2_zom_attackmode",0,FCVAR_ARCHIVE,[[Determines how zombies will attack their targets.
+    0: Grab
+    1: Claw]])
+CreateConVar("ba2_zom_retargeting",1,FCVAR_ARCHIVE,[[If enabled, zombies will periodically switch targets if another target is closer to them for enough time.
+This may cause stuttering, so it's recommended to disable this if you have performance issues with lots of zombies.]])
+CreateConVar("ba2_zom_corpseeat",1,FCVAR_ARCHIVE,[[If enabled, zombies will seek out and eat corpses while there are no targets within their range.]])
+
+
+CreateConVar("ba2_misc_corpselife",10,FCVAR_ARCHIVE,[[The amount of time before a zombie's corpse is cleaned up.
+    Set to -1 for infinite lifetime.]],-1
+)
+CreateConVar("ba2_misc_navmeshwarn",1,FCVAR_ARCHIVE,[[If enabled, Zambo the Helper Zombie will notify you if the map has no navmesh when you load in.]])
+CreateConVar("ba2_misc_maxfilters",4,FCVAR_ARCHIVE,[[The maximum number of gas mask filters each player can carry.
+    Set to -1 to disable this limit.]],-1)
+CreateConVar("ba2_misc_startwithmask",0,FCVAR_ARCHIVE,[[If enabled, all players will spawn with a gas mask on their person.]])
+CreateConVar("ba2_misc_deathdropmask",1,FCVAR_ARCHIVE,[[If enabled, players will drop their gas mask on death.]])
+CreateConVar("ba2_misc_deathdropfilter",1,FCVAR_ARCHIVE,[[If enabled, players will drop all of their gas mask filters on death.]])
+CreateConVar("ba2_misc_headshoteff",1,FCVAR_ARCHIVE,[[If enabled, zombies' heads have a chance to comically explode when they are killed by a headshot.]])
+CreateConVar("ba2_misc_addscore",1,FCVAR_ARCHIVE,[[If enabled, killing a zombie will award a frag to the player who killed them.]])
+CreateConVar("ba2_misc_gibdecals",1,FCVAR_ARCHIVE,[[If enabled, zombie gibs will leave lovely bloodstains on any surface they fall onto.]])
+-- CreateConVar("ba2_misc_isnpc",0,FCVAR_ARCHIVE,[[If enabled, other addons will consider zombies an NPC for the purpose of IsNPC() checks.
+--     Enabling this may correct interactions with some addons (for example, JMod), but can cause Lua errors in others. Enable at your own risk.]])
+
+concommand.Add("ba2_misc_maggots",BA2_ToggleMaggotMode,nil,"If God had wanted you to live, he would not have created ME!")
+--CreateConVar("ba2_misc_kidsmode",0,FCVAR_ARCHIVE,[[If enabled, this mod will become less appalling to the ESRB.]])
+CreateConVar("ba2_misc_realistic",0,nil,"If enabed, a 9mm bullet will blow the lung out of the body.")
+
+concommand.Add("ba2_gasmask",BA2_ToggleGasmask,nil)
+concommand.Add("ba2_dgasmask",BA2_DropGasmask,nil)
+concommand.Add("ba2_dfilter",BA2_DropFilter,nil)
+concommand.Add("ba2_ufilter",BA2_UFilter,nil)
+concommand.Add("ba2_cfilter",BA2_CheckFilter,nil)
+
+
 -- Code by Sninctbur
