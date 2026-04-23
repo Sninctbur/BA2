@@ -29,9 +29,11 @@ function ENT:Initialize()
 end
 
 function ENT:VialBreak(ent)
+    print("collision")
     if self.ImmuneToBreakTime >= CurTime() then return end
 
-    self:PhysicsDestroy() -- Prevents double collisions
+    self.ImmuneToBreakTime = CurTime()
+    
     if IsMounted("tf") then
         self:EmitSound("weapons/jar_explode.wav")
     else
